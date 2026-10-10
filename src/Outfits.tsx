@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadGarments } from "./db";
-import { isProcessed, type Garment, type Occasion, type Slot, type Warmth } from "./garment";
+import {
+  isProcessed,
+  type Garment,
+  type Occasion,
+  type Slot,
+  type Warmth,
+} from "./garment";
 import { rgbCss } from "./GarmentForm";
 import { Icon, type IconName } from "./Icon";
 import {
@@ -25,18 +31,41 @@ const WEATHERS: readonly [Warmth, string, IconName][] = [
   ["cool", "Viileä", "leaf"],
 ];
 const SLOT_ORDER: readonly Slot[] = ["outer", "top", "dress", "bottom"];
-const SLOT_LABELS: Record<Slot, string> = { outer: "Päällysosa tai takki", top: "Yläosa", dress: "Mekko", bottom: "Alaosa" };
+const SLOT_LABELS: Record<Slot, string> = {
+  outer: "Päällysosa tai takki",
+  top: "Yläosa",
+  dress: "Mekko",
+  bottom: "Alaosa",
+};
 const MAX_SHOWN = 20;
 
 const bySlot = (outfit: readonly Garment[]): Garment[] =>
-  [...outfit].sort((a, b) => SLOT_ORDER.indexOf(slotOf(a) ?? "top") - SLOT_ORDER.indexOf(slotOf(b) ?? "top"));
+  [...outfit].sort(
+    (a, b) =>
+      SLOT_ORDER.indexOf(slotOf(a) ?? "top") -
+      SLOT_ORDER.indexOf(slotOf(b) ?? "top"),
+  );
 
 const CollageItem = ({ garment }: { garment: Garment }) => (
-  <img className={slotOf(garment) ?? undefined} src={useObjectUrl(garment.cutout)} alt={garment.name} />
+  <img
+    className={slotOf(garment) ?? undefined}
+    src={useObjectUrl(garment.cutout)}
+    alt={garment.name}
+  />
 );
 
-const Collage = ({ outfit, children }: { outfit: readonly Garment[]; children?: ReactNode }) => (
-  <div className={outfit.some((g) => slotOf(g) === "outer") ? "collage" : "collage no-outer"}>
+const Collage = ({
+  outfit,
+  children,
+}: {
+  outfit: readonly Garment[];
+  children?: ReactNode;
+}) => (
+  <div
+    className={
+      outfit.some((g) => slotOf(g) === "outer") ? "collage" : "collage no-outer"
+    }
+  >
     {bySlot(outfit).map((g) => (
       <CollageItem key={g.id} garment={g} />
     ))}
@@ -46,9 +75,12 @@ const Collage = ({ outfit, children }: { outfit: readonly Garment[]; children?: 
 
 const Score = ({ dots }: { dots: number }) => (
   <span className="score" title={`${dots} / ${SCORE_DOTS}`}>
-    {Array.from({ length: SCORE_DOTS }, (_, i) => (
-      <span key={i} className={i < dots ? "on" : undefined} />
-    ))}
+    <span className="score-label">Sopivuus</span>
+    <span className="score-dots">
+      {Array.from({ length: SCORE_DOTS }, (_, i) => (
+        <span key={i} className={i < dots ? "on" : undefined} />
+      ))}
+    </span>
   </span>
 );
 
@@ -56,7 +88,9 @@ const Items = ({ outfit }: { outfit: readonly Garment[] }) => (
   <ul className="outfit-items">
     {bySlot(outfit).map((g) => (
       <li key={g.id}>
-        {g.colors[0] && <span className="dot" style={{ background: rgbCss(g.colors[0]) }} />}
+        {g.colors[0] && (
+          <span className="dot" style={{ background: rgbCss(g.colors[0]) }} />
+        )}
         {g.name}
       </li>
     ))}
@@ -73,13 +107,23 @@ const SwapFields = ({
   onChange: (outfit: Garment[]) => void;
 }) => (
   <div className="swap">
-    {SLOT_ORDER.filter((slot) => slot === "outer" || outfit.some((g) => slotOf(g) === slot)).map((slot) => (
+    {SLOT_ORDER.filter(
+      (slot) => slot === "outer" || outfit.some((g) => slotOf(g) === slot),
+    ).map((slot) => (
       <label key={slot}>
         {SLOT_LABELS[slot]}
         <select
           className="select-input"
           value={outfit.find((g) => slotOf(g) === slot)?.id ?? ""}
-          onChange={(e) => onChange(withSlot(outfit, slot, candidates.find((g) => g.id === e.target.value)))}
+          onChange={(e) =>
+            onChange(
+              withSlot(
+                outfit,
+                slot,
+                candidates.find((g) => g.id === e.target.value),
+              ),
+            )
+          }
         >
           {slot === "outer" && <option value="">Ei mitään</option>}
           {candidates
@@ -99,16 +143,31 @@ type Editing = { key: string; outfit: Garment[] };
 
 export const Outfits = () => {
   const [garments, setGarments] = useState<Garment[]>([]);
-  const [filter, setFilter] = useState<OutfitFilter>({ occasion: "everyday", weather: "cool", cycling: false });
+  const [filter, setFilter] = useState<OutfitFilter>({
+    occasion: "everyday",
+    weather: "cool",
+    cycling: false,
+  });
   const [editing, setEditing] = useState<Editing>();
 
   useEffect(() => {
-    void loadGarments().then((stored) => setGarments(stored.filter(isProcessed)));
+    void loadGarments().then((stored) =>
+      setGarments(stored.filter(isProcessed)),
+    );
   }, []);
 
-  const ranked = useMemo(() => rankOutfits(garments, filter), [garments, filter]);
-  const byId = useMemo(() => new Map(garments.map((g) => [g.id, g])), [garments]);
-  const candidates = useMemo(() => garments.filter((g) => fitsFilter(g, filter)), [garments, filter]);
+  const ranked = useMemo(
+    () => rankOutfits(garments, filter),
+    [garments, filter],
+  );
+  const byId = useMemo(
+    () => new Map(garments.map((g) => [g.id, g])),
+    [garments],
+  );
+  const candidates = useMemo(
+    () => garments.filter((g) => fitsFilter(g, filter)),
+    [garments, filter],
+  );
   const best = ranked[0]?.score ?? 0;
   const worst = ranked.at(-1)?.score ?? 0;
 
@@ -121,7 +180,7 @@ export const Outfits = () => {
     <>
       <div className="screen-head">
         <div className="grow">
-          <h1>Mitä puen tänään?</h1>
+          <h1>Mitä mä laitan päälle?</h1>
           <p>Asut lämpimän syksyn värien mukaan, parhaat ensin.</p>
         </div>
       </div>
@@ -131,7 +190,11 @@ export const Outfits = () => {
           <span className="picker-label">Tilanne</span>
           <div className="segmented">
             {OCCASIONS.map(([value, label]) => (
-              <button key={value} aria-pressed={filter.occasion === value} onClick={() => update({ occasion: value })}>
+              <button
+                key={value}
+                aria-pressed={filter.occasion === value}
+                onClick={() => update({ occasion: value })}
+              >
                 {label}
               </button>
             ))}
@@ -141,7 +204,11 @@ export const Outfits = () => {
           <span className="picker-label">Sää</span>
           <div className="segmented">
             {WEATHERS.map(([value, label, icon]) => (
-              <button key={value} aria-pressed={filter.weather === value} onClick={() => update({ weather: value })}>
+              <button
+                key={value}
+                aria-pressed={filter.weather === value}
+                onClick={() => update({ weather: value })}
+              >
                 <Icon name={icon} />
                 {label}
               </button>
@@ -149,7 +216,11 @@ export const Outfits = () => {
           </div>
         </div>
         <div className="picker">
-          <button className="switch" aria-pressed={filter.cycling} onClick={() => update({ cycling: !filter.cycling })}>
+          <button
+            className="switch"
+            aria-pressed={filter.cycling}
+            onClick={() => update({ cycling: !filter.cycling })}
+          >
             <Icon name="bike" />
             Pyöräily
             <span className="track" />
@@ -157,15 +228,26 @@ export const Outfits = () => {
         </div>
       </div>
 
-      {ranked.length === 0 && <p className="empty">Ei sopivia asuja näillä valinnoilla.</p>}
+      {ranked.length === 0 && (
+        <p className="empty">Ei sopivia asuja näillä valinnoilla.</p>
+      )}
       <div className="outfits">
         {ranked.slice(0, MAX_SHOWN).map((entry, i) => {
           const key = entry.garmentIds.join();
           const isEditing = editing?.key === key;
-          const outfit = isEditing ? editing.outfit : entry.garmentIds.flatMap((id) => byId.get(id) ?? []);
-          const score = isEditing ? scoreOutfit(outfit, WARM_AUTUMN) : entry.score;
+          const outfit = isEditing
+            ? editing.outfit
+            : entry.garmentIds.flatMap((id) => byId.get(id) ?? []);
+          const score = isEditing
+            ? scoreOutfit(outfit, WARM_AUTUMN)
+            : entry.score;
           return (
-            <article key={key} className={["outfit", i === 0 && "best", isEditing && "editing"].filter(Boolean).join(" ")}>
+            <article
+              key={key}
+              className={["outfit", i === 0 && "best", isEditing && "editing"]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <Collage outfit={outfit}>
                 {i === 0 && !isEditing && (
                   <span className="badge">
@@ -188,11 +270,17 @@ export const Outfits = () => {
                 )}
                 <div className="outfit-actions">
                   {isEditing ? (
-                    <button className="btn btn-soft" onClick={() => setEditing(undefined)}>
+                    <button
+                      className="btn btn-soft"
+                      onClick={() => setEditing(undefined)}
+                    >
                       Valmis
                     </button>
                   ) : (
-                    <button className="btn btn-soft" onClick={() => setEditing({ key, outfit })}>
+                    <button
+                      className="btn btn-soft"
+                      onClick={() => setEditing({ key, outfit })}
+                    >
                       <Icon name="shuffle" />
                       Vaihda osa
                     </button>
