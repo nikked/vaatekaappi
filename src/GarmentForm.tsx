@@ -1,17 +1,17 @@
-import { useState, type CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 import { hexToRgb, rgbToHex } from "./color";
-import { Icon } from "./Icon";
-import { useObjectUrl } from "./useObjectUrl";
 import {
   CATEGORIES,
+  type Category,
   categoryLabel,
   categoryLeaf,
-  isCategory,
-  type Category,
   type Garment,
+  isCategory,
   type Occasion,
   type Rgb,
 } from "./garment";
+import { Icon } from "./Icon";
+import { useObjectUrl } from "./useObjectUrl";
 
 const MAX_COLORS = 2;
 // Grey start for a new color: the user picks the real one right after adding.
@@ -19,13 +19,29 @@ const NEW_COLOR: Rgb = [128, 128, 128];
 
 export const rgbCss = ([r, g, b]: Rgb) => `rgb(${r} ${g} ${b})`;
 // Suggestions only: material is free text so unusual fabrics can be entered.
-const MATERIALS = ["puuvilla", "villa", "farkku", "pellava", "viskoosi", "polyesteri", "silkki", "nahka", "neule"];
+const MATERIALS = [
+  "puuvilla",
+  "villa",
+  "farkku",
+  "pellava",
+  "viskoosi",
+  "polyesteri",
+  "silkki",
+  "nahka",
+  "neule",
+];
 
 // Card and photo backgrounds are tinted with the garment's main color.
-export const tintStyle = (colors: readonly Rgb[]): CSSProperties & { "--tint"?: string } =>
+export const tintStyle = (
+  colors: readonly Rgb[],
+): CSSProperties & { "--tint"?: string } =>
   colors[0] ? { "--tint": rgbCss(colors[0]) } : {};
 
-const toggled = <T,>(values: readonly T[], value: T, order: readonly T[]): T[] =>
+const toggled = <T,>(
+  values: readonly T[],
+  value: T,
+  order: readonly T[],
+): T[] =>
   order.filter((v) => (v === value ? !values.includes(v) : values.includes(v)));
 
 type Props = {
@@ -45,8 +61,21 @@ const QueueThumb = ({ garment, now }: { garment: Garment; now: boolean }) => (
   </span>
 );
 
-const Toggle = ({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) => (
-  <button type="button" className="chip toggle" aria-pressed={on} onClick={onClick}>
+const Toggle = ({
+  on,
+  onClick,
+  label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  label: string;
+}) => (
+  <button
+    type="button"
+    className="chip toggle"
+    aria-pressed={on}
+    onClick={onClick}
+  >
     {label}
   </button>
 );
@@ -62,11 +91,16 @@ export const GarmentForm = ({
   onDelete,
 }: Props) => {
   const [draft, setDraft] = useState(garment);
-  const [pickCategory, setPickCategory] = useState(suggestedCategories.length === 0);
+  const [pickCategory, setPickCategory] = useState(
+    suggestedCategories.length === 0,
+  );
   const imageUrl = useObjectUrl(garment.cutout);
 
   const toggleOccasion = (o: Occasion) =>
-    setDraft({ ...draft, occasions: toggled(draft.occasions, o, ["everyday", "party"]) });
+    setDraft({
+      ...draft,
+      occasions: toggled(draft.occasions, o, ["everyday", "party"]),
+    });
 
   const toggleWarmth = (w: "warm" | "cool") => {
     const { warmth: _, ...rest } = draft;
@@ -108,7 +142,10 @@ export const GarmentForm = ({
 
         <div>
           <div className="field-label">
-            Kategoria {suggestedCategories.length > 0 && <small>ehdotukset kuvan perusteella</small>}
+            Kategoria{" "}
+            {suggestedCategories.length > 0 && (
+              <small>ehdotukset kuvan perusteella</small>
+            )}
           </div>
           {suggestedCategories.length > 0 && (
             <div className="suggest">
@@ -126,7 +163,12 @@ export const GarmentForm = ({
                   {categoryLeaf(c)}
                 </button>
               ))}
-              <button type="button" className="chip" aria-pressed={pickCategory} onClick={() => setPickCategory(true)}>
+              <button
+                type="button"
+                className="chip"
+                aria-pressed={pickCategory}
+                onClick={() => setPickCategory(true)}
+              >
                 Muu…
               </button>
             </div>
@@ -157,21 +199,37 @@ export const GarmentForm = ({
           <div className="field-label">Värit</div>
           <div className="swatches">
             {draft.colors.map((c, i) => (
-              <label key={i} className="swatch" style={{ background: rgbCss(c) }} title={rgbToHex(c)}>
+              <label
+                key={i}
+                className="swatch"
+                style={{ background: rgbCss(c) }}
+                title={rgbToHex(c)}
+              >
                 <input
                   type="color"
                   value={rgbToHex(c)}
                   aria-label={`Väri ${i + 1}`}
                   onChange={(e) => {
                     const rgb = hexToRgb(e.target.value);
-                    if (rgb) setDraft({ ...draft, colors: draft.colors.map((old, j) => (j === i ? rgb : old)) });
+                    if (rgb)
+                      setDraft({
+                        ...draft,
+                        colors: draft.colors.map((old, j) =>
+                          j === i ? rgb : old,
+                        ),
+                      });
                   }}
                 />
                 <button
                   type="button"
                   className="remove"
                   aria-label="Poista väri"
-                  onClick={() => setDraft({ ...draft, colors: draft.colors.filter((_, j) => j !== i) })}
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      colors: draft.colors.filter((_, j) => j !== i),
+                    })
+                  }
                 >
                   ×
                 </button>
@@ -182,7 +240,9 @@ export const GarmentForm = ({
                 type="button"
                 className="swatch-add"
                 title="Lisää väri"
-                onClick={() => setDraft({ ...draft, colors: [...draft.colors, NEW_COLOR] })}
+                onClick={() =>
+                  setDraft({ ...draft, colors: [...draft.colors, NEW_COLOR] })
+                }
               >
                 <Icon name="plus" />
               </button>
@@ -204,21 +264,41 @@ export const GarmentForm = ({
               on={draft.pattern === "patterned"}
               onClick={() => setDraft({ ...draft, pattern: "patterned" })}
             />
-            <Toggle label="arki" on={draft.occasions.includes("everyday")} onClick={() => toggleOccasion("everyday")} />
-            <Toggle label="juhla" on={draft.occasions.includes("party")} onClick={() => toggleOccasion("party")} />
-            <Toggle label="lämmin" on={draft.warmth === "warm"} onClick={() => toggleWarmth("warm")} />
-            <Toggle label="viileä" on={draft.warmth === "cool"} onClick={() => toggleWarmth("cool")} />
+            <Toggle
+              label="arki"
+              on={draft.occasions.includes("everyday")}
+              onClick={() => toggleOccasion("everyday")}
+            />
+            <Toggle
+              label="juhla"
+              on={draft.occasions.includes("party")}
+              onClick={() => toggleOccasion("party")}
+            />
+            <Toggle
+              label="lämmin"
+              on={draft.warmth === "warm"}
+              onClick={() => toggleWarmth("warm")}
+            />
+            <Toggle
+              label="viileä"
+              on={draft.warmth === "cool"}
+              onClick={() => toggleWarmth("cool")}
+            />
             {CATEGORIES[draft.category].slot === "bottom" && (
               <Toggle
                 label="pyöräily"
                 on={draft.bikeable}
-                onClick={() => setDraft({ ...draft, bikeable: !draft.bikeable })}
+                onClick={() =>
+                  setDraft({ ...draft, bikeable: !draft.bikeable })
+                }
               />
             )}
             <Toggle
               label="lempivaatteet"
               on={draft.favourite}
-              onClick={() => setDraft({ ...draft, favourite: !draft.favourite })}
+              onClick={() =>
+                setDraft({ ...draft, favourite: !draft.favourite })
+              }
             />
           </div>
         </div>
@@ -228,7 +308,9 @@ export const GarmentForm = ({
           <input
             className="text-input small"
             value={draft.description}
-            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            onChange={(e) =>
+              setDraft({ ...draft, description: e.target.value })
+            }
           />
         </div>
 

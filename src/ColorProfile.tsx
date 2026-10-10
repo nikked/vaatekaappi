@@ -4,7 +4,12 @@ import { loadProfile, saveProfile } from "./db";
 import { rgbCss } from "./GarmentForm";
 import type { Rgb } from "./garment";
 import { Icon } from "./Icon";
-import { SEASON_LABELS, profileFor, type Profile, type SeasonType } from "./palette";
+import {
+  type Profile,
+  profileFor,
+  SEASON_LABELS,
+  type SeasonType,
+} from "./palette";
 
 const SEASON_GROUPS: readonly [string, readonly SeasonType[]][] = [
   ["Kevät", ["light-spring", "warm-spring", "clear-spring"]],
@@ -41,7 +46,9 @@ export const ColorProfile = () => {
 
       <section className="panel">
         <h2>Värityyppi</h2>
-        <p className="hint">Värityypin vaihto korvaa paletin sen oletusväreillä.</p>
+        <p className="hint">
+          Värityypin vaihto korvaa paletin sen oletusväreillä.
+        </p>
         <div className="season-groups">
           {SEASON_GROUPS.map(([group, seasons]) => (
             <div key={group} className="season-group">
@@ -65,17 +72,28 @@ export const ColorProfile = () => {
 
       <section className="panel">
         <h2>Paletti</h2>
-        <p className="hint">Mitä lähempänä vaatteen väri on jotakin näistä, sitä paremmin asu sopii sinulle.</p>
+        <p className="hint">
+          Mitä lähempänä vaatteen väri on jotakin näistä, sitä paremmin asu
+          sopii sinulle.
+        </p>
         <div className="swatches">
           {profile.palette.map((c, i) => (
-            <label key={i} className="swatch" style={{ background: rgbCss(c) }} title={rgbToHex(c)}>
+            <label
+              key={i}
+              className="swatch"
+              style={{ background: rgbCss(c) }}
+              title={rgbToHex(c)}
+            >
               <input
                 type="color"
                 value={rgbToHex(c)}
                 aria-label={`Väri ${i + 1}`}
                 onChange={(e) => {
                   const rgb = hexToRgb(e.target.value);
-                  if (rgb) setPalette(profile.palette.map((old, j) => (j === i ? rgb : old)));
+                  if (rgb)
+                    setPalette(
+                      profile.palette.map((old, j) => (j === i ? rgb : old)),
+                    );
                 }}
               />
               {profile.palette.length > 1 && (
@@ -83,7 +101,9 @@ export const ColorProfile = () => {
                   type="button"
                   className="remove"
                   aria-label="Poista väri"
-                  onClick={() => setPalette(profile.palette.filter((_, j) => j !== i))}
+                  onClick={() =>
+                    setPalette(profile.palette.filter((_, j) => j !== i))
+                  }
                 >
                   ×
                 </button>
@@ -100,7 +120,10 @@ export const ColorProfile = () => {
           </button>
         </div>
         <div className="outfit-actions">
-          <button className="btn btn-soft" onClick={() => update(profileFor(profile.season))}>
+          <button
+            className="btn btn-soft"
+            onClick={() => update(profileFor(profile.season))}
+          >
             Palauta oletusvärit
           </button>
         </div>

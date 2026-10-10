@@ -4,13 +4,31 @@ export type Slot = "top" | "bottom" | "dress" | "outer";
 // tree can be renamed or reorganised without touching saved garments.
 // `slot: null` = stored but not used in outfits yet.
 export const CATEGORIES = {
-  "top-long-shirt": { path: ["Yläosa", "Pitkähihaiset", "Kauluspaidat"], slot: "top" },
-  "top-long-knit": { path: ["Yläosa", "Pitkähihaiset", "Neulepaidat"], slot: "top" },
-  "top-short-shirt": { path: ["Yläosa", "Lyhythihaiset", "Kauluspaidat"], slot: "top" },
-  "top-short-tee": { path: ["Yläosa", "Lyhythihaiset", "T-paidat"], slot: "top" },
+  "top-long-shirt": {
+    path: ["Yläosa", "Pitkähihaiset", "Kauluspaidat"],
+    slot: "top",
+  },
+  "top-long-knit": {
+    path: ["Yläosa", "Pitkähihaiset", "Neulepaidat"],
+    slot: "top",
+  },
+  "top-short-shirt": {
+    path: ["Yläosa", "Lyhythihaiset", "Kauluspaidat"],
+    slot: "top",
+  },
+  "top-short-tee": {
+    path: ["Yläosa", "Lyhythihaiset", "T-paidat"],
+    slot: "top",
+  },
   "bottom-trousers": { path: ["Alaosa", "Housut"], slot: "bottom" },
-  "bottom-skirt-long": { path: ["Alaosa", "Hameet", "Pitkät hameet"], slot: "bottom" },
-  "bottom-skirt-short": { path: ["Alaosa", "Hameet", "Lyhyet hameet"], slot: "bottom" },
+  "bottom-skirt-long": {
+    path: ["Alaosa", "Hameet", "Pitkät hameet"],
+    slot: "bottom",
+  },
+  "bottom-skirt-short": {
+    path: ["Alaosa", "Hameet", "Lyhyet hameet"],
+    slot: "bottom",
+  },
   "bottom-shorts": { path: ["Alaosa", "Shortsit"], slot: "bottom" },
   dress: { path: ["Mekot"], slot: "dress" },
   // Päällysosat are worn over a top, never alone; an outfit has one of them or a coat.
@@ -26,7 +44,10 @@ export const CATEGORIES = {
   jewelry: { path: ["Korut"], slot: null },
   accessories: { path: ["Asusteet"], slot: null },
   underwear: { path: ["Alusvaatteet"], slot: null },
-} as const satisfies Record<string, { path: readonly string[]; slot: Slot | null }>;
+} as const satisfies Record<
+  string,
+  { path: readonly string[]; slot: Slot | null }
+>;
 
 export type Category = keyof typeof CATEGORIES;
 
@@ -78,9 +99,12 @@ export type Garment = GarmentInput & Derived;
 export const isCategory = (value: unknown): value is Category =>
   typeof value === "string" && Object.hasOwn(CATEGORIES, value);
 
-export const categoryLabel = (category: Category): string => CATEGORIES[category].path.join(" › ");
-export const categoryLeaf = (category: Category): string => CATEGORIES[category].path.at(-1) ?? category;
-export const categoryGroup = (category: Category): string => CATEGORIES[category].path[0];
+export const categoryLabel = (category: Category): string =>
+  CATEGORIES[category].path.join(" › ");
+export const categoryLeaf = (category: Category): string =>
+  CATEGORIES[category].path.at(-1) ?? category;
+export const categoryGroup = (category: Category): string =>
+  CATEGORIES[category].path[0];
 
 export const isOneOf =
   <T extends string>(values: readonly T[]) =>

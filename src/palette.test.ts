@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PROFILE, SEASON_PALETTES, SEASON_TYPES, profileFor } from "./palette";
+import {
+  DEFAULT_PROFILE,
+  profileFor,
+  SEASON_PALETTES,
+  SEASON_TYPES,
+} from "./palette";
 
 describe("SEASON_PALETTES", () => {
   it("gives every season type a full palette with no unparsed colors", () => {
-    for (const season of SEASON_TYPES) expect(SEASON_PALETTES[season]).toHaveLength(season === "warm-autumn" ? 16 : 12);
+    for (const season of SEASON_TYPES)
+      expect(SEASON_PALETTES[season]).toHaveLength(
+        season === "warm-autumn" ? 16 : 12,
+      );
   });
 });
 

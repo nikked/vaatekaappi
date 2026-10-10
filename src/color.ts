@@ -8,7 +8,7 @@ const srgbToLinear = (c: number): number => {
 };
 
 const labF = (t: number): number =>
-  t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116;
+  t > 216 / 24389 ? Math.cbrt(t) : ((24389 / 27) * t + 16) / 116;
 
 // sRGB → CIELAB, D65 white point.
 export const rgbToLab = ([r, g, b]: Rgb): Lab => {
@@ -35,7 +35,8 @@ const MIN_ALPHA = 200;
 export const opaquePixels = ({ data }: Pixels): Rgb[] => {
   const result: Rgb[] = [];
   for (let i = 0; i + 3 < data.length; i += 4) {
-    if ((data[i + 3] ?? 0) >= MIN_ALPHA) result.push([data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]);
+    if ((data[i + 3] ?? 0) >= MIN_ALPHA)
+      result.push([data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]);
   }
   return result;
 };
@@ -54,7 +55,8 @@ const mean = (points: readonly Rgb[]): Rgb => {
 
 const nearest = (lab: Lab, centers: readonly Lab[]): number =>
   centers.reduce(
-    (best, c, i) => (deltaE(lab, c) < deltaE(lab, centers[best] ?? c) ? i : best),
+    (best, c, i) =>
+      deltaE(lab, c) < deltaE(lab, centers[best] ?? c) ? i : best,
     0,
   );
 
@@ -64,7 +66,9 @@ const initialCenters = (labs: readonly Lab[], k: number): Lab[] => {
   if (!first) return [];
   const centers: Lab[] = [first];
   while (centers.length < k) {
-    const distances = labs.map((l) => Math.min(...centers.map((c) => deltaE(l, c))));
+    const distances = labs.map((l) =>
+      Math.min(...centers.map((c) => deltaE(l, c))),
+    );
     const farthest = distances.indexOf(Math.max(...distances));
     if ((distances[farthest] ?? 0) === 0) break;
     const next = labs[farthest];
@@ -99,7 +103,10 @@ export const dominantColors = (
   }
   return centers
     .map((_, ci) => points.filter((_, pi) => assignment[pi] === ci))
-    .filter((members) => members.length > 0 && members.length >= points.length * minShare)
+    .filter(
+      (members) =>
+        members.length > 0 && members.length >= points.length * minShare,
+    )
     .sort((a, b) => b.length - a.length)
     .map(mean);
 };
@@ -109,15 +116,23 @@ export const dominantColors = (
 const SAME_COLOR_DELTA_E = 18;
 
 // Keeps the first (largest) of any colors closer than `maxDeltaE` to each other.
-export const mergeSimilar = (colors: readonly Rgb[], maxDeltaE: number): Rgb[] =>
+export const mergeSimilar = (
+  colors: readonly Rgb[],
+  maxDeltaE: number,
+): Rgb[] =>
   colors.reduce<Rgb[]>(
     (kept, c) =>
-      kept.some((k) => deltaE(rgbToLab(k), rgbToLab(c)) < maxDeltaE) ? kept : [...kept, c],
+      kept.some((k) => deltaE(rgbToLab(k), rgbToLab(c)) < maxDeltaE)
+        ? kept
+        : [...kept, c],
     [],
   );
 
 export const cutoutColors = (pixels: Pixels, max = 2): Rgb[] =>
-  mergeSimilar(dominantColors(opaquePixels(pixels), 3), SAME_COLOR_DELTA_E).slice(0, max);
+  mergeSimilar(
+    dominantColors(opaquePixels(pixels), 3),
+    SAME_COLOR_DELTA_E,
+  ).slice(0, max);
 
 export const rgbToHex = (rgb: Rgb): string =>
   `#${rgb.map((c) => c.toString(16).padStart(2, "0")).join("")}`;

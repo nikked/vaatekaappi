@@ -1,12 +1,29 @@
 import { useEffect, useRef, useState } from "react";
 import { exportBackup, importBackup } from "./backup";
-import { deleteGarment, loadGarments, loadProfile, replaceGarments, saveGarment, saveProfile } from "./db";
+import {
+  deleteGarment,
+  loadGarments,
+  loadProfile,
+  replaceGarments,
+  saveGarment,
+  saveProfile,
+} from "./db";
 import { GarmentForm, rgbCss, tintStyle } from "./GarmentForm";
+import {
+  categoryGroup,
+  categoryLeaf,
+  type Garment,
+  type StoredGarment,
+} from "./garment";
 import { Icon } from "./Icon";
-import { completeGarment, draftFromPhoto, isUpToDate, type Draft } from "./photo";
 import { imageFiles } from "./image";
+import {
+  completeGarment,
+  type Draft,
+  draftFromPhoto,
+  isUpToDate,
+} from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
-import { categoryGroup, categoryLeaf, type Garment, type StoredGarment } from "./garment";
 
 const download = (filename: string, content: Blob) => {
   const url = URL.createObjectURL(content);
@@ -27,10 +44,15 @@ const GROUPS = [
 ] as const;
 type Filter = "all" | "favourites" | (typeof GROUPS)[number][1];
 
-const closeMenu = (inside: Element) => inside.closest("details")?.removeAttribute("open");
+const closeMenu = (inside: Element) =>
+  inside.closest("details")?.removeAttribute("open");
 
 const matches = (g: Garment, filter: Filter): boolean =>
-  filter === "all" ? true : filter === "favourites" ? g.favourite : categoryGroup(g.category) === filter;
+  filter === "all"
+    ? true
+    : filter === "favourites"
+      ? g.favourite
+      : categoryGroup(g.category) === filter;
 
 const Card = ({
   garment,
@@ -101,7 +123,8 @@ export const Wardrobe = () => {
   const [filter, setFilter] = useState<Filter>("all");
   const loadStarted = useRef(false);
 
-  const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
+  const showError = (e: unknown) =>
+    setError(e instanceof Error ? e.message : String(e));
 
   const process = async (stored: readonly StoredGarment[]): Promise<void> => {
     setGarments(stored.filter(isUpToDate));
@@ -119,7 +142,9 @@ export const Wardrobe = () => {
       try {
         const { garments: stored, unreadable } = await loadGarments();
         if (unreadable > 0) {
-          setError(`${unreadable} vaatetta ei voitu lukea. Ne on jätetty tallennukseen koskemattomina.`);
+          setError(
+            `${unreadable} vaatetta ei voitu lukea. Ne on jätetty tallennukseen koskemattomina.`,
+          );
         }
         await process(stored);
       } catch (e) {
@@ -132,17 +157,28 @@ export const Wardrobe = () => {
   // join the same run instead of starting a second loop that competes for the
   // models and overwrites the counter. Refs because the run outlives renders.
   const pending = useRef<File[]>([]);
-  const progress = useRef<{ done: number; total: number; failed: string[] }>({ done: 0, total: 0, failed: [] });
+  const progress = useRef<{ done: number; total: number; failed: string[] }>({
+    done: 0,
+    total: 0,
+    failed: [],
+  });
   const running = useRef(false);
   const garmentsRef = useRef(garments);
   garmentsRef.current = garments;
 
   const drain = async () => {
     running.current = true;
-    for (let file = pending.current.shift(); file; file = pending.current.shift()) {
+    for (
+      let file = pending.current.shift();
+      file;
+      file = pending.current.shift()
+    ) {
       const { done, total } = progress.current;
       setBusy(`Tunnistetaan kuvaa ${done + 1} / ${total}…`);
-      const examples = garmentsRef.current.map((g) => ({ embedding: g.embedding, category: g.category }));
+      const examples = garmentsRef.current.map((g) => ({
+        embedding: g.embedding,
+        category: g.category,
+      }));
       try {
         const draft = await draftFromPhoto(file, examples);
         setQueue((q) => [...q, draft]);
@@ -170,7 +206,9 @@ export const Wardrobe = () => {
     pending.current.push(...files);
     progress.current.total += files.length;
     if (running.current) {
-      setBusy(`Tunnistetaan kuvaa ${progress.current.done + 1} / ${progress.current.total}…`);
+      setBusy(
+        `Tunnistetaan kuvaa ${progress.current.done + 1} / ${progress.current.total}…`,
+      );
     } else {
       void drain();
     }
@@ -182,7 +220,8 @@ export const Wardrobe = () => {
   const [dragging, setDragging] = useState(false);
   useEffect(() => {
     let depth = 0;
-    const hasFiles = (e: DragEvent) => e.dataTransfer?.types.includes("Files") ?? false;
+    const hasFiles = (e: DragEvent) =>
+      e.dataTransfer?.types.includes("Files") ?? false;
     const onEnter = (e: DragEvent) => {
       if (!hasFiles(e)) return;
       depth += 1;
@@ -225,14 +264,18 @@ export const Wardrobe = () => {
   const save = async (garment: Garment) => {
     await saveGarment(garment);
     setGarments((gs) =>
-      gs.some((g) => g.id === garment.id) ? gs.map((g) => (g.id === garment.id ? garment : g)) : [...gs, garment],
+      gs.some((g) => g.id === garment.id)
+        ? gs.map((g) => (g.id === garment.id ? garment : g))
+        : [...gs, garment],
     );
   };
 
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const backup = await importBackup(new Uint8Array(await file.arrayBuffer()));
+      const backup = await importBackup(
+        new Uint8Array(await file.arrayBuffer()),
+      );
       // Stored before any processing, so the imported input is safe even if models fail.
       await replaceGarments(backup.garments);
       if (backup.profile) await saveProfile(backup.profile);
@@ -258,7 +301,10 @@ export const Wardrobe = () => {
           <div className="progress">
             <div className="progress-dots">
               {queue.map((d, i) => (
-                <span key={d.garment.id} className={i === 0 ? "now" : undefined} />
+                <span
+                  key={d.garment.id}
+                  className={i === 0 ? "now" : undefined}
+                />
               ))}
             </div>
             {queue.length} jäljellä
@@ -286,7 +332,10 @@ export const Wardrobe = () => {
       <>
         {dropOverlay}
         <div className="review-top">
-          <button className="btn btn-ghost" onClick={() => setEditing(undefined)}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setEditing(undefined)}
+          >
             <Icon name="back" />
             Vaatekaappi
           </button>
@@ -327,7 +376,13 @@ export const Wardrobe = () => {
         <label className="btn btn-primary" title="Lisää kuvia">
           <Icon name="plus" />
           <span className="add-label">Lisää kuvia</span>
-          <input type="file" accept="image/*" multiple hidden onChange={(e) => addFiles([...(e.target.files ?? [])])} />
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => addFiles([...(e.target.files ?? [])])}
+          />
         </label>
         <details className="menu">
           <summary className="icon-btn" title="Lisää toimintoja">
@@ -339,20 +394,28 @@ export const Wardrobe = () => {
               onClick={async (e) => {
                 closeMenu(e.currentTarget);
                 // From the database, not the screen: includes garments still waiting for a cut-out.
-                const zip = await exportBackup((await loadGarments()).garments, await loadProfile());
+                const zip = await exportBackup(
+                  (await loadGarments()).garments,
+                  await loadProfile(),
+                );
                 const date = new Date().toISOString().slice(0, 10);
-                download(`kaappi-varmuuskopio-${date}.zip`, new Blob([new Uint8Array(zip)], { type: "application/zip" }));
+                download(
+                  `kaappi-varmuuskopio-${date}.zip`,
+                  new Blob([new Uint8Array(zip)], { type: "application/zip" }),
+                );
               }}
             >
               <Icon name="down" />
               <span>
-                Vie varmuuskopio<small>Kuvat, vaatteiden tiedot ja värisi zip-tiedostoon</small>
+                Vie varmuuskopio
+                <small>Kuvat, vaatteiden tiedot ja värisi zip-tiedostoon</small>
               </span>
             </button>
             <label>
               <Icon name="up" />
               <span>
-                Tuo varmuuskopio<small>Korvaa nykyisen vaatekaapin ja värit</small>
+                Tuo varmuuskopio
+                <small>Korvaa nykyisen vaatekaapin ja värit</small>
               </span>
               <input
                 type="file"
@@ -378,12 +441,21 @@ export const Wardrobe = () => {
         <div className="notice">
           <div className="stack">
             {queue.slice(0, 3).map((d) => (
-              <span key={d.garment.id} style={{ background: rgbCss(d.garment.colors[0] ?? [200, 190, 180]) }} />
+              <span
+                key={d.garment.id}
+                style={{
+                  background: rgbCss(d.garment.colors[0] ?? [200, 190, 180]),
+                }}
+              />
             ))}
           </div>
           <p>
-            <strong>{queue.length === 1 ? "1 uusi kuva" : `${queue.length} uutta kuvaa`}</strong> odottaa
-            tarkistusta.
+            <strong>
+              {queue.length === 1
+                ? "1 uusi kuva"
+                : `${queue.length} uutta kuvaa`}
+            </strong>{" "}
+            odottaa tarkistusta.
           </p>
           <button className="btn btn-soft" onClick={() => setReviewing(true)}>
             Jatka tarkistusta
@@ -392,28 +464,48 @@ export const Wardrobe = () => {
       )}
 
       <div className="filters">
-        <button className="chip" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
+        <button
+          className="chip"
+          aria-pressed={filter === "all"}
+          onClick={() => setFilter("all")}
+        >
           Kaikki <span className="count">{garments.length}</span>
         </button>
         {GROUPS.map(([label, group]) => (
-          <button key={group} className="chip" aria-pressed={filter === group} onClick={() => setFilter(group)}>
-            {label} <span className="count">{garments.filter((g) => matches(g, group)).length}</span>
+          <button
+            key={group}
+            className="chip"
+            aria-pressed={filter === group}
+            onClick={() => setFilter(group)}
+          >
+            {label}{" "}
+            <span className="count">
+              {garments.filter((g) => matches(g, group)).length}
+            </span>
           </button>
         ))}
-        <button className="chip" aria-pressed={filter === "favourites"} onClick={() => setFilter("favourites")}>
+        <button
+          className="chip"
+          aria-pressed={filter === "favourites"}
+          onClick={() => setFilter("favourites")}
+        >
           <Icon name="heart-fill" />
           Lempivaatteet
         </button>
       </div>
 
-      {garments.length === 0 && !busy && <p className="empty">Lisää ensimmäiset vaatteet kuvista.</p>}
+      {garments.length === 0 && !busy && (
+        <p className="empty">Lisää ensimmäiset vaatteet kuvista.</p>
+      )}
       <div className="grid">
         {shown.map((g) => (
           <Card
             key={g.id}
             garment={g}
             onOpen={() => setEditing(g)}
-            onToggleFavourite={() => void save({ ...g, favourite: !g.favourite })}
+            onToggleFavourite={() =>
+              void save({ ...g, favourite: !g.favourite })
+            }
           />
         ))}
       </div>

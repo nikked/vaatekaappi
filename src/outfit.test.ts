@@ -8,13 +8,13 @@ import {
   hasAtMostOnePattern,
   hueDistance,
   labToLch,
+  type OutfitFilter,
   pairScore,
   paletteDistance,
   rankOutfits,
   scoreDots,
   scoreOutfit,
   withSlot,
-  type OutfitFilter,
 } from "./outfit";
 import { WARM_AUTUMN } from "./palette";
 
@@ -69,11 +69,19 @@ const garment = (
 const ids = (outfits: readonly (readonly Garment[])[]): string[][] =>
   outfits.map((o) => o.map((g) => g.id).sort());
 
-const everydayCool: OutfitFilter = { occasion: "everyday", weather: "cool", cycling: false };
+const everydayCool: OutfitFilter = {
+  occasion: "everyday",
+  weather: "cool",
+  cycling: false,
+};
 
 describe("generateOutfits", () => {
   it("fills top + bottom, with and without each outer", () => {
-    const wardrobe = [garment("t", TEE), garment("b", TROUSERS), garment("c", COAT)];
+    const wardrobe = [
+      garment("t", TEE),
+      garment("b", TROUSERS),
+      garment("c", COAT),
+    ];
     expect(ids(generateOutfits(wardrobe))).toEqual([
       ["b", "t"],
       ["b", "c", "t"],
@@ -93,7 +101,11 @@ describe("generateOutfits", () => {
   });
 
   it("never combines a dress with a top or bottom", () => {
-    const wardrobe = [garment("t", TEE), garment("b", TROUSERS), garment("d", DRESS)];
+    const wardrobe = [
+      garment("t", TEE),
+      garment("b", TROUSERS),
+      garment("d", DRESS),
+    ];
     expect(ids(generateOutfits(wardrobe))).toEqual([["b", "t"], ["d"]]);
   });
 
@@ -107,19 +119,35 @@ describe("generateOutfits", () => {
   });
 
   it("leaves out categories without a slot", () => {
-    const wardrobe = [garment("t", TEE), garment("b", TROUSERS), garment("s", SNEAKERS)];
+    const wardrobe = [
+      garment("t", TEE),
+      garment("b", TROUSERS),
+      garment("s", SNEAKERS),
+    ];
     expect(ids(generateOutfits(wardrobe))).toEqual([["b", "t"]]);
   });
 
   it("produces nothing when a required slot is empty", () => {
-    expect(generateOutfits([garment("t", TEE), garment("c", COAT)])).toEqual([]);
+    expect(generateOutfits([garment("t", TEE), garment("c", COAT)])).toEqual(
+      [],
+    );
   });
 });
 
 describe("fitsFilter", () => {
   it("requires the occasion", () => {
-    expect(fitsFilter(garment("a", TEE, GREY, { occasions: ["everyday", "party"] }), everydayCool)).toBe(true);
-    expect(fitsFilter(garment("a", TEE, GREY, { occasions: ["party"] }), everydayCool)).toBe(false);
+    expect(
+      fitsFilter(
+        garment("a", TEE, GREY, { occasions: ["everyday", "party"] }),
+        everydayCool,
+      ),
+    ).toBe(true);
+    expect(
+      fitsFilter(
+        garment("a", TEE, GREY, { occasions: ["party"] }),
+        everydayCool,
+      ),
+    ).toBe(false);
   });
 
   it("drops airy garments on cool days and warm garments on warm days", () => {
@@ -134,12 +162,16 @@ describe("fitsFilter", () => {
 
   it("lets garments without warmth fit any weather", () => {
     expect(fitsFilter(garment("a", TEE), everydayCool)).toBe(true);
-    expect(fitsFilter(garment("a", TEE), { ...everydayCool, weather: "warm" })).toBe(true);
+    expect(
+      fitsFilter(garment("a", TEE), { ...everydayCool, weather: "warm" }),
+    ).toBe(true);
   });
 
   it("requires bikeable bottoms when cycling, and only bottoms", () => {
     const cycling: OutfitFilter = { ...everydayCool, cycling: true };
-    expect(fitsFilter(garment("s", SKIRT, GREY, { bikeable: true }), cycling)).toBe(true);
+    expect(
+      fitsFilter(garment("s", SKIRT, GREY, { bikeable: true }), cycling),
+    ).toBe(true);
     expect(fitsFilter(garment("s", SKIRT), cycling)).toBe(false);
     expect(fitsFilter(garment("t", TEE), cycling)).toBe(true);
   });
@@ -147,8 +179,15 @@ describe("fitsFilter", () => {
 
 describe("hasAtMostOnePattern", () => {
   it("allows all solid or a single pattern", () => {
-    expect(hasAtMostOnePattern([garment("a", TEE), garment("b", TROUSERS)])).toBe(true);
-    expect(hasAtMostOnePattern([garment("a", TEE, GREY, { pattern: "patterned" }), garment("b", TROUSERS)])).toBe(true);
+    expect(
+      hasAtMostOnePattern([garment("a", TEE), garment("b", TROUSERS)]),
+    ).toBe(true);
+    expect(
+      hasAtMostOnePattern([
+        garment("a", TEE, GREY, { pattern: "patterned" }),
+        garment("b", TROUSERS),
+      ]),
+    ).toBe(true);
   });
 
   it("rejects two patterned garments", () => {
@@ -191,7 +230,9 @@ describe("pairScore", () => {
 
 describe("paletteDistance", () => {
   it("is zero when every garment's dominant color is in the palette", () => {
-    expect(paletteDistance([garment("a", TEE, RUST)], WARM_AUTUMN)).toBeCloseTo(0);
+    expect(paletteDistance([garment("a", TEE, RUST)], WARM_AUTUMN)).toBeCloseTo(
+      0,
+    );
   });
 
   it("uses only the first color of each garment", () => {
@@ -200,10 +241,16 @@ describe("paletteDistance", () => {
   });
 
   it("is set by the worst-fitting garment", () => {
-    const cobaltOnly = paletteDistance([garment("c", TEE, COBALT)], WARM_AUTUMN);
-    expect(paletteDistance([garment("r", TEE, RUST), garment("c", TEE, COBALT)], WARM_AUTUMN)).toBe(
-      cobaltOnly,
+    const cobaltOnly = paletteDistance(
+      [garment("c", TEE, COBALT)],
+      WARM_AUTUMN,
     );
+    expect(
+      paletteDistance(
+        [garment("r", TEE, RUST), garment("c", TEE, COBALT)],
+        WARM_AUTUMN,
+      ),
+    ).toBe(cobaltOnly);
   });
 
   it("is larger for icy cool colors than for warm ones", () => {
@@ -214,13 +261,16 @@ describe("paletteDistance", () => {
 
   it("ignores garments without colors", () => {
     const empty = garment("e", TEE, null);
-    expect(paletteDistance([garment("a", TEE, RUST), empty], WARM_AUTUMN)).toBeCloseTo(0);
+    expect(
+      paletteDistance([garment("a", TEE, RUST), empty], WARM_AUTUMN),
+    ).toBeCloseTo(0);
     expect(paletteDistance([empty], WARM_AUTUMN)).toBe(0);
   });
 });
 
 describe("colorHarmony", () => {
-  const outfitOf = (...colors: Rgb[]) => colors.map((c, i) => garment(String(i), TEE, c));
+  const outfitOf = (...colors: Rgb[]) =>
+    colors.map((c, i) => garment(String(i), TEE, c));
   const goodPair = colorHarmony(outfitOf(RUST, ORANGE));
 
   it("treats low-chroma colors, cream included, as neutrals that score like a good pair", () => {
@@ -229,7 +279,9 @@ describe("colorHarmony", () => {
 
   it("scores one color + neutrals the same as a good pair, so extra layers don't win", () => {
     expect(colorHarmony(outfitOf(BLACK, COBALT, WHITE))).toBe(goodPair);
-    expect(colorHarmony(outfitOf(ORANGE))).toBe(colorHarmony(outfitOf(ORANGE, RUST)));
+    expect(colorHarmony(outfitOf(ORANGE))).toBe(
+      colorHarmony(outfitOf(ORANGE, RUST)),
+    );
   });
 
   it("counts rust + olive as harmonious", () => {
@@ -255,17 +307,20 @@ describe("colorHarmony", () => {
   });
 
   it("ignores garments without colors", () => {
-    expect(colorHarmony([garment("a", TEE, ORANGE), garment("b", TEE, null)])).toBe(goodPair);
+    expect(
+      colorHarmony([garment("a", TEE, ORANGE), garment("b", TEE, null)]),
+    ).toBe(goodPair);
   });
 });
 
 describe("scoreOutfit", () => {
-  const outfitOf = (...colors: Rgb[]) => colors.map((c, i) => garment(String(i), TEE, c));
+  const outfitOf = (...colors: Rgb[]) =>
+    colors.map((c, i) => garment(String(i), TEE, c));
 
   it("ranks an all-neutral outfit above a clashing one", () => {
-    expect(scoreOutfit(outfitOf(BLACK, WHITE, GREY), WARM_AUTUMN)).toBeGreaterThan(
-      scoreOutfit(outfitOf(ORANGE, GREEN, BLACK), WARM_AUTUMN),
-    );
+    expect(
+      scoreOutfit(outfitOf(BLACK, WHITE, GREY), WARM_AUTUMN),
+    ).toBeGreaterThan(scoreOutfit(outfitOf(ORANGE, GREEN, BLACK), WARM_AUTUMN));
   });
 
   it("ranks warm autumn colors above icy cool ones with equal harmony", () => {
@@ -313,7 +368,9 @@ describe("rankOutfits", () => {
       garment("airy-top", TEE, GREY, { warmth: "cool" }),
       garment("bottom", TROUSERS),
     ];
-    expect(rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds)).toEqual([["top", "bottom"]]);
+    expect(
+      rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds),
+    ).toEqual([["top", "bottom"]]);
   });
 
   it("drops outfits with more than one pattern", () => {
@@ -322,14 +379,19 @@ describe("rankOutfits", () => {
       garment("patterned-skirt", SKIRT, GREY, { pattern: "patterned" }),
       garment("plain-skirt", SKIRT),
     ];
-    expect(rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds)).toEqual([
-      ["patterned-top", "plain-skirt"],
-    ]);
+    expect(
+      rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds),
+    ).toEqual([["patterned-top", "plain-skirt"]]);
   });
 
   it("ranks by the palette it is given", () => {
-    const wardrobe = [garment("rust-top", TEE, RUST), garment("cobalt-top", TEE, COBALT), garment("b", TROUSERS, BLACK)];
-    const first = (palette: readonly Rgb[]) => rankOutfits(wardrobe, everydayCool, palette)[0]?.garmentIds[0];
+    const wardrobe = [
+      garment("rust-top", TEE, RUST),
+      garment("cobalt-top", TEE, COBALT),
+      garment("b", TROUSERS, BLACK),
+    ];
+    const first = (palette: readonly Rgb[]) =>
+      rankOutfits(wardrobe, everydayCool, palette)[0]?.garmentIds[0];
     expect(first(WARM_AUTUMN)).toBe("rust-top");
     expect(first([COBALT, BLACK])).toBe("cobalt-top");
   });
@@ -344,13 +406,19 @@ describe("withSlot", () => {
   const bottom = garment("b", TROUSERS);
 
   it("replaces the garment in a slot", () => {
-    expect(ids([withSlot([top, bottom], "bottom", garment("s", SKIRT))])).toEqual([["s", "t"]]);
+    expect(
+      ids([withSlot([top, bottom], "bottom", garment("s", SKIRT))]),
+    ).toEqual([["s", "t"]]);
   });
 
   it("adds to an empty slot and removes with undefined", () => {
     const coat = garment("c", COAT);
-    expect(ids([withSlot([top, bottom], "outer", coat)])).toEqual([["b", "c", "t"]]);
-    expect(ids([withSlot([top, bottom, coat], "outer", undefined)])).toEqual([["b", "t"]]);
+    expect(ids([withSlot([top, bottom], "outer", coat)])).toEqual([
+      ["b", "c", "t"],
+    ]);
+    expect(ids([withSlot([top, bottom, coat], "outer", undefined)])).toEqual([
+      ["b", "t"],
+    ]);
   });
 });
 

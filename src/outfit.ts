@@ -1,5 +1,12 @@
-import { deltaE, rgbToLab, type Lab } from "./color";
-import { CATEGORIES, type Garment, type Occasion, type Rgb, type Slot, type Warmth } from "./garment";
+import { deltaE, type Lab, rgbToLab } from "./color";
+import {
+  CATEGORIES,
+  type Garment,
+  type Occasion,
+  type Rgb,
+  type Slot,
+  type Warmth,
+} from "./garment";
 
 type OutfitTemplate = {
   required: readonly Slot[];
@@ -39,24 +46,33 @@ export const EXTRA_HUE_PENALTY = 1;
 // the palette (clearly off-palette) costs as much as one full clash.
 export const PALETTE_WEIGHT = 1 / 20;
 
-export const slotOf = (garment: Garment): Slot | null => CATEGORIES[garment.category].slot;
+export const slotOf = (garment: Garment): Slot | null =>
+  CATEGORIES[garment.category].slot;
 
 const cartesian = <T>(choices: readonly (readonly T[])[]): T[][] =>
   choices.reduce<T[][]>(
-    (combos, options) => combos.flatMap((combo) => options.map((o) => [...combo, o])),
+    (combos, options) =>
+      combos.flatMap((combo) => options.map((o) => [...combo, o])),
     [[]],
   );
 
 export const generateOutfits = (garments: readonly Garment[]): Garment[][] =>
   TEMPLATES.flatMap(({ required, optional }) => {
-    const inSlot = (slot: Slot): (Garment | null)[] => garments.filter((g) => slotOf(g) === slot);
-    const choices = [...required.map(inSlot), ...optional.map((slot) => [null, ...inSlot(slot)])];
+    const inSlot = (slot: Slot): (Garment | null)[] =>
+      garments.filter((g) => slotOf(g) === slot);
+    const choices = [
+      ...required.map(inSlot),
+      ...optional.map((slot) => [null, ...inSlot(slot)]),
+    ];
     return cartesian(choices).map((combo) => combo.filter((g) => g !== null));
   });
 
 // A garment's warmth matching the weather is the wrong match: a warm knit on a
 // warm day, or an airy garment on a cool day. Untagged garments fit any weather.
-export const fitsFilter = (garment: Garment, { occasion, weather, cycling }: OutfitFilter): boolean =>
+export const fitsFilter = (
+  garment: Garment,
+  { occasion, weather, cycling }: OutfitFilter,
+): boolean =>
   garment.occasions.includes(occasion) &&
   garment.warmth !== weather &&
   (!cycling || slotOf(garment) !== "bottom" || garment.bikeable);
@@ -83,7 +99,10 @@ const mean = (values: readonly number[]): number =>
 
 // The worst-fitting garment, not the mean: with a mean, adding any on-palette
 // layer would lift the score and that layer would end up in every outfit.
-export const paletteDistance = (outfit: readonly Garment[], palette: readonly Rgb[]): number => {
+export const paletteDistance = (
+  outfit: readonly Garment[],
+  palette: readonly Rgb[],
+): number => {
   const paletteLabs = palette.map(rgbToLab);
   return Math.max(
     0,
@@ -105,7 +124,9 @@ export const pairScore = (hueA: number, hueB: number): number => {
 const distinctHueCount = (hues: readonly number[]): number =>
   hues.reduce<number[]>(
     (groups, hue) =>
-      groups.some((g) => hueDistance(g, hue) <= ANALOGOUS_MAX_DEGREES) ? groups : [...groups, hue],
+      groups.some((g) => hueDistance(g, hue) <= ANALOGOUS_MAX_DEGREES)
+        ? groups
+        : [...groups, hue],
     [],
   ).length;
 
@@ -116,12 +137,20 @@ export const colorHarmony = (outfit: readonly Garment[]): number => {
     .map((color) => labToLch(rgbToLab(color)))
     .filter(([, chroma]) => chroma >= NEUTRAL_CHROMA)
     .map(([, , hue]) => hue);
-  const pairs = hues.flatMap((a, i) => hues.slice(i + 1).map((b) => pairScore(a, b)));
+  const pairs = hues.flatMap((a, i) =>
+    hues.slice(i + 1).map((b) => pairScore(a, b)),
+  );
   const extraHues = Math.max(0, distinctHueCount(hues) - MAX_HUES);
-  return (pairs.length === 0 ? PAIR_BONUS : mean(pairs)) - extraHues * EXTRA_HUE_PENALTY;
+  return (
+    (pairs.length === 0 ? PAIR_BONUS : mean(pairs)) -
+    extraHues * EXTRA_HUE_PENALTY
+  );
 };
 
-export const scoreOutfit = (outfit: readonly Garment[], palette: readonly Rgb[]): number =>
+export const scoreOutfit = (
+  outfit: readonly Garment[],
+  palette: readonly Rgb[],
+): number =>
   colorHarmony(outfit) - PALETTE_WEIGHT * paletteDistance(outfit, palette);
 
 export const rankOutfits = (
@@ -139,7 +168,11 @@ export const rankOutfits = (
 
 // Replaces the garment in `slot`, adds one to an empty slot, or with
 // `undefined` removes it. Used when the user swaps a single garment.
-export const withSlot = (outfit: readonly Garment[], slot: Slot, garment: Garment | undefined): Garment[] => [
+export const withSlot = (
+  outfit: readonly Garment[],
+  slot: Slot,
+  garment: Garment | undefined,
+): Garment[] => [
   ...outfit.filter((g) => slotOf(g) !== slot),
   ...(garment ? [garment] : []),
 ];
@@ -152,8 +185,13 @@ export const MIN_SCORE_SPREAD = PAIR_BONUS + CLASH_PENALTY;
 
 // Relative to the outfits on screen, since raw scores mean nothing to the user.
 // Clamped because a swapped outfit can score outside the listed range.
-export const scoreDots = (score: number, best: number, worst: number): number => {
+export const scoreDots = (
+  score: number,
+  best: number,
+  worst: number,
+): number => {
   const floor = Math.min(worst, best - MIN_SCORE_SPREAD);
-  const dots = 1 + Math.round(((score - floor) / (best - floor)) * (SCORE_DOTS - 1));
+  const dots =
+    1 + Math.round(((score - floor) / (best - floor)) * (SCORE_DOTS - 1));
   return Math.max(1, Math.min(SCORE_DOTS, dots));
 };

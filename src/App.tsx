@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ColorProfile } from "./ColorProfile";
-import { Icon, type IconName } from "./Icon";
 import { requestPersistentStorage } from "./db";
+import { Icon, type IconName } from "./Icon";
 import { ModelBanner } from "./ModelBanner";
 import { warmUp } from "./models";
 import { Outfits } from "./Outfits";
