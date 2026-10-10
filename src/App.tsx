@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Outfits } from "./Outfits";
 import { Wardrobe } from "./Wardrobe";
 
-const SCREENS = ["Wardrobe", "Outfits"] as const;
+const SCREENS = ["Vaatekaappi", "Asut"] as const;
 type Screen = (typeof SCREENS)[number];
 
 export const App = () => {
-  const [screen, setScreen] = useState<Screen>("Wardrobe");
+  const [screen, setScreen] = useState<Screen>("Vaatekaappi");
   return (
     <>
       <nav>
@@ -16,7 +16,7 @@ export const App = () => {
           </button>
         ))}
       </nav>
-      <main>{screen === "Wardrobe" ? <Wardrobe /> : <Outfits />}</main>
+      <main>{screen === "Vaatekaappi" ? <Wardrobe /> : <Outfits />}</main>
     </>
   );
 };

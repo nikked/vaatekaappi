@@ -140,3 +140,13 @@ export const extractColors = (pixels: Pixels, k = 3): { colors: Rgb[]; uncertain
   const uncertain = fg.length < pixels.width * pixels.height * MIN_FOREGROUND_SHARE;
   return { colors: uncertain ? [] : dominantColors(fg, k), uncertain };
 };
+
+export const rgbToHex = (rgb: Rgb): string =>
+  `#${rgb.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+
+export const hexToRgb = (hex: string): Rgb | undefined => {
+  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!match) return undefined;
+  const [, r = "", g = "", b = ""] = match;
+  return [parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)];
+};

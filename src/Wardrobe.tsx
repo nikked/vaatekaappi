@@ -8,16 +8,18 @@ import { useObjectUrl } from "./useObjectUrl";
 import { DEFAULT_CATEGORY, type Garment } from "./garment";
 
 const draftFromFile = async (file: File): Promise<Garment> => {
-  const { colors, uncertain } = extractColors(await loadPixels(file));
+  const { colors } = extractColors(await loadPixels(file), 2);
   return {
     id: crypto.randomUUID(),
+    name: "",
+    description: "",
     image: file,
     category: DEFAULT_CATEGORY,
     colors,
-    colorsUncertain: uncertain,
-    season: [],
-    formality: "casual",
     pattern: "solid",
+    occasions: [],
+    bikeable: false,
+    favourite: false,
   };
 };
 
@@ -32,8 +34,8 @@ const download = (filename: string, content: string) => {
 
 const Thumbnail = ({ garment, onClick }: { garment: Garment; onClick: () => void }) => (
   <button className="thumb" onClick={onClick}>
-    <img src={useObjectUrl(garment.image)} alt={garment.category} />
-    <span>{garment.category}</span>
+    <img src={useObjectUrl(garment.image)} alt={garment.name} />
+    <span>{garment.name}</span>
   </button>
 );
 
@@ -77,7 +79,7 @@ export const Wardrobe = () => {
     <>
       <div className="toolbar">
         <label className="button">
-          Add photos
+          Lisää kuvia
           <input
             type="file"
             accept="image/*"
@@ -87,13 +89,13 @@ export const Wardrobe = () => {
           />
         </label>
         <button
-          onClick={async () => download("wardrobe.json", await exportWardrobe(garments))}
+          onClick={async () => download("vaatekaappi.json", await exportWardrobe(garments))}
           disabled={garments.length === 0}
         >
-          Export
+          Vie
         </button>
         <label className="button">
-          Import
+          Tuo
           <input
             type="file"
             accept="application/json"
@@ -101,7 +103,7 @@ export const Wardrobe = () => {
             onChange={(e) => void importFile(e.target.files?.[0])}
           />
         </label>
-        {queue.length > 0 && <span>{queue.length} to review</span>}
+        {queue.length > 0 && <span>{queue.length} tarkistettavana</span>}
       </div>
       {error && <p className="error">{error}</p>}
 
@@ -109,7 +111,7 @@ export const Wardrobe = () => {
         <GarmentForm
           key={next.id}
           garment={next}
-          submitLabel="Save & next"
+          submitLabel="Tallenna & seuraava"
           onSubmit={async (g) => {
             await save(g);
             setQueue((q) => q.slice(1));
@@ -120,7 +122,7 @@ export const Wardrobe = () => {
         <GarmentForm
           key={editing.id}
           garment={editing}
-          submitLabel="Save"
+          submitLabel="Tallenna"
           onSubmit={async (g) => {
             await save(g);
             setEditing(undefined);

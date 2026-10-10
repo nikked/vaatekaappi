@@ -1,1 +1,1 @@
-export const Outfits = () => <p>Outfit generation comes in step 2.</p>;
+export const Outfits = () => <p>Asujen ehdotukset tulevat vaiheessa 2.</p>;

@@ -1,17 +1,23 @@
 import { useState } from "react";
+import { hexToRgb, rgbToHex } from "./color";
 import { useObjectUrl } from "./useObjectUrl";
 import {
   CATEGORIES,
-  FORMALITIES,
+  OCCASIONS,
   PATTERNS,
-  SEASONS,
+  WARMTHS,
   isCategory,
   isOneOf,
   type Garment,
-  type Rgb,
+  type Occasion,
+  type Pattern,
+  type Warmth,
 } from "./garment";
 
-const rgbCss = ([r, g, b]: Rgb) => `rgb(${r} ${g} ${b})`;
+const PATTERN_LABELS: Record<Pattern, string> = { solid: "Yksivärinen", patterned: "Kuviollinen" };
+const OCCASION_LABELS: Record<Occasion, string> = { everyday: "Arki", party: "Juhla" };
+const WARMTH_LABELS: Record<Warmth, string> = { warm: "Lämmin", cool: "Viileä" };
+const MAX_COLORS = 2;
 
 type Props = {
   garment: Garment;
@@ -36,9 +42,25 @@ export const GarmentForm = ({ garment, submitLabel, onSubmit, onCancel, onDelete
       <img src={imageUrl} alt="" />
       <div className="fields">
         <label>
-          Category
-          <select
+          Nimi
+          <input
             autoFocus
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          />
+        </label>
+
+        <label>
+          Kuvaus
+          <input
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+        </label>
+
+        <label>
+          Kategoria
+          <select
             value={draft.category}
             onChange={(e) => {
               const category = e.target.value;
@@ -51,44 +73,39 @@ export const GarmentForm = ({ garment, submitLabel, onSubmit, onCancel, onDelete
           </select>
         </label>
 
-        <fieldset>
-          <legend>Season</legend>
-          {SEASONS.map((s) => (
-            <label key={s}>
+        <div className="colors">
+          Värit
+          {draft.colors.map((c, i) => (
+            <span key={i}>
               <input
-                type="checkbox"
-                checked={draft.season.includes(s)}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    season: e.target.checked
-                      ? SEASONS.filter((x) => x === s || draft.season.includes(x))
-                      : draft.season.filter((x) => x !== s),
-                  })
-                }
+                type="color"
+                value={rgbToHex(c)}
+                onChange={(e) => {
+                  const rgb = hexToRgb(e.target.value);
+                  if (rgb) setDraft({ ...draft, colors: draft.colors.map((old, j) => (j === i ? rgb : old)) });
+                }}
               />
-              {s}
-            </label>
+              <button
+                type="button"
+                aria-label="Poista väri"
+                onClick={() => setDraft({ ...draft, colors: draft.colors.filter((_, j) => j !== i) })}
+              >
+                ×
+              </button>
+            </span>
           ))}
-        </fieldset>
+          {draft.colors.length < MAX_COLORS && (
+            <button
+              type="button"
+              onClick={() => setDraft({ ...draft, colors: [...draft.colors, [128, 128, 128]] })}
+            >
+              Lisää väri
+            </button>
+          )}
+        </div>
 
         <label>
-          Formality
-          <select
-            value={draft.formality}
-            onChange={(e) => {
-              const formality = e.target.value;
-              if (isOneOf(FORMALITIES)(formality)) setDraft({ ...draft, formality });
-            }}
-          >
-            {FORMALITIES.map((f) => (
-              <option key={f}>{f}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Pattern
+          Kuviointi
           <select
             value={draft.pattern}
             onChange={(e) => {
@@ -97,30 +114,81 @@ export const GarmentForm = ({ garment, submitLabel, onSubmit, onCancel, onDelete
             }}
           >
             {PATTERNS.map((p) => (
-              <option key={p}>{p}</option>
+              <option key={p} value={p}>
+                {PATTERN_LABELS[p]}
+              </option>
             ))}
           </select>
         </label>
 
-        <div className="colors">
-          Colors
-          {draft.colorsUncertain ? (
-            <span> couldn't separate garment from background</span>
-          ) : (
-            draft.colors.map((c) => (
-              <span key={rgbCss(c)} className="swatch" style={{ background: rgbCss(c) }} />
-            ))
-          )}
-        </div>
+        <fieldset>
+          <legend>Tilanne</legend>
+          {OCCASIONS.map((o) => (
+            <label key={o}>
+              <input
+                type="checkbox"
+                checked={draft.occasions.includes(o)}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    occasions: e.target.checked
+                      ? OCCASIONS.filter((x) => x === o || draft.occasions.includes(x))
+                      : draft.occasions.filter((x) => x !== o),
+                  })
+                }
+              />
+              {OCCASION_LABELS[o]}
+            </label>
+          ))}
+        </fieldset>
+
+        <label>
+          Lämpö
+          <select
+            value={draft.warmth ?? ""}
+            onChange={(e) => {
+              const warmth = e.target.value;
+              const { warmth: _, ...rest } = draft;
+              setDraft(isOneOf(WARMTHS)(warmth) ? { ...rest, warmth } : rest);
+            }}
+          >
+            <option value="">–</option>
+            {WARMTHS.map((w) => (
+              <option key={w} value={w}>
+                {WARMTH_LABELS[w]}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {CATEGORIES[draft.category] === "bottom" && (
+          <label>
+            <input
+              type="checkbox"
+              checked={draft.bikeable}
+              onChange={(e) => setDraft({ ...draft, bikeable: e.target.checked })}
+            />
+            Pyöräily
+          </label>
+        )}
+
+        <label>
+          <input
+            type="checkbox"
+            checked={draft.favourite}
+            onChange={(e) => setDraft({ ...draft, favourite: e.target.checked })}
+          />
+          Lempivaate
+        </label>
 
         <div className="actions">
           <button type="submit">{submitLabel}</button>
           <button type="button" onClick={onCancel}>
-            Cancel
+            Peruuta
           </button>
           {onDelete && (
             <button type="button" onClick={onDelete}>
-              Delete
+              Poista
             </button>
           )}
         </div>
