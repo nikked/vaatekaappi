@@ -65,6 +65,14 @@ const PATHS = {
       <path d="M4 7h3c5 0 5 10 10 10h3m0 0-3-3m3 3-3 3M4 17h3c1.5 0 2.5-.8 3.3-2M20 7h-3c-1.5 0-2.5.8-3.3 2M20 7l-3-3m3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <circle cx="7.5" cy="11" r="1.3" fill="currentColor" />
+      <circle cx="10.5" cy="7" r="1.3" fill="currentColor" />
+      <circle cx="15" cy="7.5" r="1.3" fill="currentColor" />
+    </>
+  ),
 } as const;
 
 export type IconName = keyof typeof PATHS;

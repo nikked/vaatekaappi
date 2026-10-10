@@ -7,8 +7,8 @@ import {
   isOneOf,
   type Garment,
   type MaybeProcessedGarment,
-  type Rgb,
 } from "./garment";
+import { isProfile, isRgb, type Profile } from "./palette";
 
 // Cut-out and embedding are optional so the hand-made example file imports;
 // the app computes them on import.
@@ -18,7 +18,10 @@ type ExportedGarment = Omit<Garment, "image" | "cutout" | "embedding"> & {
   embedding?: number[];
 };
 
-type ExportFile = { version: 1; garments: ExportedGarment[] };
+// `profile` is optional so files made before it existed still import.
+type ExportFile = { version: 1; garments: ExportedGarment[]; profile?: Profile };
+
+export type Backup = { garments: MaybeProcessedGarment[]; profile?: Profile };
 
 const toDataUrl = async (blob: Blob): Promise<string> => {
   const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -29,9 +32,10 @@ const toDataUrl = async (blob: Blob): Promise<string> => {
 
 const fromDataUrl = async (url: string): Promise<Blob> => (await fetch(url)).blob();
 
-export const exportWardrobe = async (garments: readonly Garment[]): Promise<string> => {
+export const exportWardrobe = async (garments: readonly Garment[], profile: Profile): Promise<string> => {
   const file: ExportFile = {
     version: 1,
+    profile,
     garments: await Promise.all(
       garments.map(async (g) => ({
         ...g,
@@ -45,11 +49,6 @@ export const exportWardrobe = async (garments: readonly Garment[]): Promise<stri
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
-
-const isRgb = (value: unknown): value is Rgb =>
-  Array.isArray(value) &&
-  value.length === 3 &&
-  value.every((c) => typeof c === "number" && c >= 0 && c <= 255);
 
 const isExportedGarment = (value: unknown): value is ExportedGarment =>
   isRecord(value) &&
@@ -72,7 +71,7 @@ const isExportedGarment = (value: unknown): value is ExportedGarment =>
   typeof value.favourite === "boolean";
 
 // Throws on anything that isn't a valid export, so a bad file never replaces the wardrobe.
-export const importWardrobe = async (json: string): Promise<MaybeProcessedGarment[]> => {
+export const importWardrobe = async (json: string): Promise<Backup> => {
   const parsed: unknown = JSON.parse(json);
   if (!isRecord(parsed) || parsed.version !== 1 || !Array.isArray(parsed.garments)) {
     throw new Error("Not a wardrobe export file");
@@ -81,11 +80,15 @@ export const importWardrobe = async (json: string): Promise<MaybeProcessedGarmen
   const invalid = migrated.findIndex((g) => !isExportedGarment(g));
   if (invalid !== -1) throw new Error(`Invalid garment at index ${invalid}`);
   const garments: ExportedGarment[] = migrated.filter(isExportedGarment);
-  return Promise.all(
-    garments.map(async ({ cutout, ...g }) => ({
-      ...g,
-      image: await fromDataUrl(g.image),
-      ...(cutout === undefined ? {} : { cutout: await fromDataUrl(cutout) }),
-    })),
-  );
+  if (parsed.profile !== undefined && !isProfile(parsed.profile)) throw new Error("Invalid color profile");
+  return {
+    garments: await Promise.all(
+      garments.map(async ({ cutout, ...g }) => ({
+        ...g,
+        image: await fromDataUrl(g.image),
+        ...(cutout === undefined ? {} : { cutout: await fromDataUrl(cutout) }),
+      })),
+    ),
+    ...(parsed.profile === undefined ? {} : { profile: parsed.profile }),
+  };
 };

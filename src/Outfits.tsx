@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { loadGarments } from "./db";
+import { loadGarments, loadProfile } from "./db";
 import {
   isProcessed,
   type Garment,
@@ -19,7 +19,7 @@ import {
   withSlot,
   type OutfitFilter,
 } from "./outfit";
-import { WARM_AUTUMN } from "./palette";
+import { DEFAULT_PROFILE, SEASON_LABELS } from "./palette";
 import { useObjectUrl } from "./useObjectUrl";
 
 const OCCASIONS: readonly [Occasion, string][] = [
@@ -149,16 +149,18 @@ export const Outfits = () => {
     cycling: false,
   });
   const [editing, setEditing] = useState<Editing>();
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
 
   useEffect(() => {
     void loadGarments().then((stored) =>
       setGarments(stored.filter(isProcessed)),
     );
+    void loadProfile().then(setProfile);
   }, []);
 
   const ranked = useMemo(
-    () => rankOutfits(garments, filter),
-    [garments, filter],
+    () => rankOutfits(garments, filter, profile.palette),
+    [garments, filter, profile],
   );
   const byId = useMemo(
     () => new Map(garments.map((g) => [g.id, g])),
@@ -181,7 +183,10 @@ export const Outfits = () => {
       <div className="screen-head">
         <div className="grow">
           <h1>Mitä mä laitan päälle?</h1>
-          <p>Asut lämpimän syksyn värien mukaan, parhaat ensin.</p>
+          <p>
+            Asut värityyppisi ({SEASON_LABELS[profile.season].toLowerCase()})
+            mukaan, parhaat ensin.
+          </p>
         </div>
       </div>
 
@@ -239,7 +244,7 @@ export const Outfits = () => {
             ? editing.outfit
             : entry.garmentIds.flatMap((id) => byId.get(id) ?? []);
           const score = isEditing
-            ? scoreOutfit(outfit, WARM_AUTUMN)
+            ? scoreOutfit(outfit, profile.palette)
             : entry.score;
           return (
             <article
