@@ -18,12 +18,13 @@ photo-based try-on, profile photos.
 | Platform    | Browser: Vite + React + TypeScript, data in IndexedDB, no backend   |
 | Users       | One person, one wardrobe, one profile                               |
 | Screens     | Wardrobe, Outfits                                                   |
-| Photos      | Garments on plain background, same lighting                         |
-| Examples    | Own structured format, images tagged by id → convert to JSON first  |
-| Prefill     | Category, colors, season, formality, pattern/material               |
+| Language    | UI in Finnish, code in English                                      |
+| Photos      | JPEG/PNG only (iPhone "Most Compatible"). Backgrounds not plain     |
+| Examples    | One-time manual conversion of `vaatteet.json` → `examples.json`     |
+| Prefill     | Category (zero-shot + examples), colors (suggested, user confirms)  |
 | Add flow    | Small batch first, then one at a time; same fast prefill for both   |
 | Outfits     | Fixed templates, hard filters, palette + color-theory ranking       |
-| Palette     | Season type (e.g. "soft autumn") mapped to a fixed palette          |
+| Palette     | Warm autumn, fixed palette constant                                 |
 | Dress me    | v1: flat-lay collage. Photo try-on decided after spike, not in v1   |
 | Embeddings  | `Xenova/clip-vit-base-patch32` via transformers.js (WebGPU)         |
 | Backup      | Export/import single JSON file, images as data URLs                 |
@@ -33,20 +34,20 @@ photo-based try-on, profile photos.
 ```ts
 type Garment = {
   id: string;
+  name: string;
+  description: string;
   image: Blob;
-  category: Category;
-  colors: Rgb[];          // dominant, ordered by pixel share
-  season: Season[];
-  formality: Formality;
-  pattern: Pattern;
+  category: Category;     // leaf of the category tree
+  colors: Rgb[];          // 1–2, confirmed by the user
+  pattern: "solid" | "patterned";    // #yksivärinen / #kuviollinen
+  occasions: Occasion[];  // #arki → everyday, #juhla → party
+  warmth?: "warm" | "cool";          // #lämmin / #viileä: garment warmth
+  bikeable: boolean;      // #pyöräily, only meaningful for bottoms
+  favourite: boolean;     // #lempivaatteet
   embedding: Float32Array;
 };
 
-type Profile = {
-  season: SeasonType;     // → palette lookup
-};
-
-type Slot = "top" | "bottom" | "dress" | "shoes" | "outer";
+type Slot = "top" | "bottom" | "dress" | "outer";
 
 type OutfitTemplate = {
   required: Slot[];
@@ -59,11 +60,24 @@ type Outfit = {
 };
 ```
 
-`Category`, `Season`, `Formality`, `Pattern` are string-literal unions built from
-the category list (still to be provided). Each `Category` maps to exactly one
-`Slot`.
+Color tags (#musta, #vihreä, …) are dropped; hex colors cover them.
 
-Templates: `top + bottom + shoes (+ outer)`, `dress + shoes (+ outer)`.
+Category tree (from `vaatteet.json`, plus `Takit > Sisätakit`):
+
+| Category                                         | Slot   |
+| ------------------------------------------------ | ------ |
+| Yläosa > Pitkähihaiset > Kauluspaidat / Neulepaidat / Neuletakit | top |
+| Yläosa > Pitkähihaiset > Bleiserit               | outer  |
+| Yläosa > Lyhythihaiset > Kauluspaidat / T-paidat | top    |
+| Alaosa > Housut / Hameet (Pitkät, Lyhyet) / Shortsit | bottom |
+| Mekot                                            | dress  |
+| Takit, Takit > Sisätakit                          | outer  |
+| Sukat, Kengät (…), Päähineet (…), Korut, Asusteet, Alusvaatteet | none yet |
+
+Categories without a slot are stored but not used in outfits until they are
+added later.
+
+Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 
 ## Screens
 
@@ -77,29 +91,35 @@ Templates: `top + bottom + shoes (+ outer)`, `dress + shoes (+ outer)`.
 - Export / import JSON.
 
 ### Outfits
-- Season + formality picker → ranked list of generated outfits.
+- Occasion (Arki / Juhla), weather (Lämmin / Viileä) and Pyöräily pickers →
+  ranked list of generated outfits.
 - Pick an outfit, or swap single garments → dress me: collage of garment images
   laid out by slot.
 
 ## Steps
 
-### 0. Importer and app shell
-- Script converting the existing structured format to `examples.json`
-  (`{ id, category, season, formality, pattern }[]`) matched to images by id.
+### 0. App shell (done) and example data
 - App shell with two screens, IndexedDB storage, JSON export/import.
-- **Verify:** importer unit tests on a sample of the real format; export →
-  import round-trip test.
+- Convert `vaatteet.json` by hand to `examples.json` with fixes: the skirt's ID
+  is 4364 (photo `IMG_4364`), description "Kiva hame arkeen ja juhlaan";
+  normalize category paths; denim shirt and blazer move to Takit > Sisätakit;
+  `##cc99ff` → `#cc99ff`; skirt gets two colors.
+- Convert the 7 HEIC photos once to JPEG with macOS `sips`.
+- Replace placeholder categories and fields in `garment.ts` with the model above.
 
 ### 1. Recognize and prefill
 - Load the model at app start so it is warm before the first upload; cache it in
   the browser after first download.
-- Compute embedding on drop; k-NN over labelled example embeddings for
-  category, season, formality, pattern. Top 3 neighbours' labels become the
-  suggestion chips. Confirmed garments become new examples.
-- Colors: estimate background color from the image border, mask pixels close
-  to it (ΔE in Lab), k-means (k≈3) on the rest. If the mask removes almost
-  everything (garment same color as background), flag colors as uncertain.
-- Aim for ≥5 labelled examples per category.
+- Category: compute embedding on drop. Zero-shot similarity against a text
+  prompt per category (e.g. "a photo of a long skirt"), combined with k-NN
+  over confirmed garments; examples gain weight as their count grows. Top 3
+  become suggestion chips. Confirmed garments become new examples.
+- Pattern: zero-shot ("a plain single-colored garment" vs "a patterned
+  garment").
+- Colors: the existing extraction on the photo's center region (backgrounds
+  aren't plain) suggests 1–2 colors; the user confirms or corrects with a color
+  picker. Confirmed hex values are the truth.
+- Tags (occasion, warmth, pyöräily, favourite) are toggles, not predicted.
 - **Verify:** held-out accuracy per attribute on labelled examples (also try
   `Xenova/siglip-base-patch16-224` and keep the better one); time from drop to
   suggestions on the M1 Air; unit tests for masking and color clustering.
@@ -107,15 +127,18 @@ Templates: `top + bottom + shoes (+ outer)`, `dress + shoes (+ outer)`.
 ### 2. Outfits
 All pure functions over `Garment[]`:
 - **Generate:** fill template slots from the wardrobe.
-- **Filter:** every garment matches the chosen season and formality; at most one
-  patterned item.
+- **Filter:** every garment has the chosen occasion; cold weather excludes
+  `cool` garments, warm weather excludes `warm` ones, untagged fit both;
+  Pyöräily requires a bikeable bottom (or no bottom); at most one patterned
+  item.
 - **Score:**
   - Palette fit: each garment's dominant color distance to the nearest palette
     color.
   - Color theory, in LCh: low-chroma colors count as neutrals and go with
-    anything. Non-neutral hues score for analogous (≤30°) or complementary
+    anything. Non-neutral hues score for analogous (≤60°) or complementary
     (~180°) relationships, are penalized when they clash, and when there are
-    more than 2 non-neutral hues.
+    more than 2 non-neutral hues. One color + neutrals gets the same baseline
+    as a good pair, so adding layers is neither rewarded nor punished.
 - Collage: draw garment images on a canvas laid out by slot.
 - **Verify:** dense unit tests for generate, filter and each score part; run
   end to end on the real wardrobe and check that the top-ranked outfits look
@@ -126,8 +149,6 @@ All pure functions over `Garment[]`:
   ~5 outfits. Optionally compare Gemini.
 - Decides whether photo try-on (cloud) goes into a later version.
 
-## Inputs still needed
-- Category list, each category's slot, and allowed values for season,
-  formality, pattern.
-- Sample of the structured example format.
-- Season type and which season→palette mapping to use.
+## Open
+- Whether example photos are committed to the repo (~17 MB as HEIC, less as
+  JPEG) or kept local only.
