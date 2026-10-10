@@ -1,0 +1,86 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #222;
+  background: #fafafa;
+}
+body {
+  margin: 0 auto;
+  max-width: 960px;
+  padding: 16px;
+}
+nav,
+.toolbar,
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+button,
+.button {
+  padding: 6px 12px;
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  font: inherit;
+}
+button[aria-pressed="true"] {
+  background: #222;
+  color: white;
+}
+.error {
+  color: #b00020;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+}
+.thumb img,
+.garment-form img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: white;
+}
+.garment-form {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+}
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fields label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.swatch {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-left: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+@media (max-width: 600px) {
+  .garment-form {
+    grid-template-columns: 1fr;
+  }
+}
