@@ -141,7 +141,7 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
   user's picks (indoor lighting), so the color picker stays essential. Not yet
   measured on the M1 Air.
 
-### 2. Outfits (logic done, UI and collage to do)
+### 2. Outfits (done)
 All pure functions over `Garment[]`:
 - **Generate:** fill template slots from the wardrobe.
 - **Filter:** every garment has the chosen occasion; cold weather excludes
@@ -156,7 +156,10 @@ All pure functions over `Garment[]`:
     (~180°) relationships, are penalized when they clash, and when there are
     more than 2 non-neutral hues. One color + neutrals gets the same baseline
     as a good pair, so adding layers is neither rewarded nor punished.
-- Collage: draw garment images on a canvas laid out by slot.
+- Collage: cut-outs laid out by slot with CSS grid (no canvas needed until an
+  outfit has to be saved as an image).
+- Score shown as 5 dots relative to the listed outfits, with a minimum spread
+  so nearly equal outfits don't look far apart in a short list.
 - **Verify:** dense unit tests for generate, filter and each score part; run
   end to end on the real wardrobe and check that the top-ranked outfits look
   right.

@@ -40,7 +40,7 @@ export const EXTRA_HUE_PENALTY = 1;
 // the palette (clearly off-palette) costs as much as one full clash.
 export const PALETTE_WEIGHT = 1 / 20;
 
-const slotOf = (garment: Garment): Slot | null => CATEGORIES[garment.category];
+export const slotOf = (garment: Garment): Slot | null => CATEGORIES[garment.category];
 
 const cartesian = <T>(choices: readonly (readonly T[])[]): T[][] =>
   choices.reduce<T[][]>(
@@ -133,3 +133,24 @@ export const rankOutfits = (garments: readonly Garment[], filter: OutfitFilter):
       score: scoreOutfit(outfit, WARM_AUTUMN),
     }))
     .sort((a, b) => b.score - a.score);
+
+// Replaces the garment in `slot`, adds one to an empty slot, or with
+// `undefined` removes it. Used when the user swaps a single garment.
+export const withSlot = (outfit: readonly Garment[], slot: Slot, garment: Garment | undefined): Garment[] => [
+  ...outfit.filter((g) => slotOf(g) !== slot),
+  ...(garment ? [garment] : []),
+];
+
+export const SCORE_DOTS = 5;
+
+// The difference between a harmonious pair and a clash. Outfits closer than
+// this to the best one shouldn't look much worse just because the list is short.
+export const MIN_SCORE_SPREAD = PAIR_BONUS + CLASH_PENALTY;
+
+// Relative to the outfits on screen, since raw scores mean nothing to the user.
+// Clamped because a swapped outfit can score outside the listed range.
+export const scoreDots = (score: number, best: number, worst: number): number => {
+  const floor = Math.min(worst, best - MIN_SCORE_SPREAD);
+  const dots = 1 + Math.round(((score - floor) / (best - floor)) * (SCORE_DOTS - 1));
+  return Math.max(1, Math.min(SCORE_DOTS, dots));
+};
