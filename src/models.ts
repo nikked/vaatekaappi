@@ -28,9 +28,6 @@ const EMBEDDER = "Xenova/siglip-base-patch16-224";
 // their output is post-processed change: older garments are then recomputed.
 export const DERIVED_BY = `${SEGMENTER}+${EMBEDDER}+crop`;
 
-// Left undefined, transformers.js uses WASM in the browser and CPU in Node.
-const device = globalThis.navigator?.gpu ? "webgpu" : undefined;
-
 export type ModelStatus = {
   state: "loading" | "ready" | "failed";
   downloads: Downloads;
@@ -61,15 +58,40 @@ const once = <T>(load: () => Promise<T>): (() => Promise<T>) => {
   return () => (loaded ??= load());
 };
 
+type Device = "webgpu" | undefined; // undefined: WASM in the browser, CPU in Node
+
+// Firefox can expose navigator.gpu and still have no adapter (e.g. a
+// blocklisted GPU), so an adapter is requested before choosing WebGPU.
+const gpuDevice = once(async (): Promise<Device> => {
+  const gpu = globalThis.navigator?.gpu;
+  const adapter = gpu ? await gpu.requestAdapter().catch(() => null) : null;
+  return adapter ? "webgpu" : undefined;
+});
+
+// A model that can't be set up on this GPU still works on WASM, only slower.
+const onBestDevice = async <T>(
+  load: (device: Device) => Promise<T>,
+): Promise<T> => {
+  const device = await gpuDevice();
+  if (!device) return load(undefined);
+  try {
+    return await load(device);
+  } catch {
+    return load(undefined);
+  }
+};
+
 // The model's config isn't recognized by the background-removal pipeline, so it
 // is loaded with the base model class and its preprocessing spelled out.
 // WebGPU fp16 takes ~0.3 s per photo; the WASM fallback ~8 s.
 const segmenter = once(async () => ({
-  model: await PreTrainedModel.from_pretrained(
-    SEGMENTER,
-    device
-      ? { device, dtype: "fp16", progress_callback }
-      : { dtype: "q8", progress_callback },
+  model: await onBestDevice((device) =>
+    PreTrainedModel.from_pretrained(
+      SEGMENTER,
+      device
+        ? { device, dtype: "fp16", progress_callback }
+        : { dtype: "q8", progress_callback },
+    ),
   ),
   processor: await AutoProcessor.from_pretrained(SEGMENTER, {
     progress_callback,
@@ -92,22 +114,26 @@ const vision = once(async () => ({
   processor: await AutoProcessor.from_pretrained(EMBEDDER, {
     progress_callback,
   }),
-  model: await SiglipVisionModel.from_pretrained(EMBEDDER, {
-    dtype: "q8",
-    device,
-    progress_callback,
-  }),
+  model: await onBestDevice((device) =>
+    SiglipVisionModel.from_pretrained(EMBEDDER, {
+      dtype: "q8",
+      device,
+      progress_callback,
+    }),
+  ),
 }));
 
 const text = once(async () => ({
   tokenizer: await AutoTokenizer.from_pretrained(EMBEDDER, {
     progress_callback,
   }),
-  model: await SiglipTextModel.from_pretrained(EMBEDDER, {
-    dtype: "q8",
-    device,
-    progress_callback,
-  }),
+  model: await onBestDevice((device) =>
+    SiglipTextModel.from_pretrained(EMBEDDER, {
+      dtype: "q8",
+      device,
+      progress_callback,
+    }),
+  ),
 }));
 
 const rows = (data: Float32Array, dims: readonly number[]): number[][] => {

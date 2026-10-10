@@ -23,6 +23,7 @@ import {
   removeDraft,
   subscribeImports,
 } from "./imports";
+import { getModelStatus, subscribeModelStatus } from "./models";
 import { completeGarment, isUpToDate } from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
 
@@ -121,6 +122,10 @@ const completeAll = async (
 export const Wardrobe = () => {
   const [garments, setGarments] = useState<Garment[]>([]);
   const imports = useSyncExternalStore(subscribeImports, getImports);
+  // Photos also fail when the models never loaded; HEIC is then not the reason.
+  const modelsFailed =
+    useSyncExternalStore(subscribeModelStatus, getModelStatus).state ===
+    "failed";
   const queue = imports.drafts;
   const [editing, setEditing] = useState<Garment>();
   const [busy, setBusy] = useState<string>();
@@ -384,9 +389,10 @@ export const Wardrobe = () => {
       {error && <p className="error">{error}</p>}
       {imports.failed.length > 0 && (
         <div className="error">
-          Näitä kuvia ei saatu käsiteltyä: {imports.failed.join(", ")}. Jos ne
-          ovat HEIC-kuvia, tallenna ne JPEG-muodossa (Kuvat-apissa Arkisto →
-          Vie) tai käytä Safaria.{" "}
+          Näitä kuvia ei saatu käsiteltyä: {imports.failed.join(", ")}.{" "}
+          {modelsFailed
+            ? "Kuvantunnistus ei latautunut; lataa sivu uudelleen ja lisää kuvat sitten uudestaan."
+            : "Jos ne ovat HEIC-kuvia, tallenna ne JPEG-muodossa (Kuvat-apissa Arkisto → Vie) tai käytä Safaria."}{" "}
           <button
             type="button"
             className="btn btn-soft"
