@@ -28,7 +28,7 @@ photo-based try-on, profile photos.
 | Dress me    | v1: flat-lay collage. Photo try-on decided after spike, not in v1   |
 | Embeddings  | `Xenova/siglip-base-patch16-224` q8 via transformers.js (WebGPU)    |
 | Cut-outs    | `briaai/RMBG-1.4`: WebGPU fp16, WASM q8 fallback (personal use only) |
-| Backup      | Export/import single JSON file, images as data URLs                 |
+| Backup      | Zip: vaatteet.json + original photos + cut-outs; old JSON imports   |
 | Name        | Kaappi                                                              |
 | Design      | Mockup as is: `mockups/index.html` (cream, terracotta, Fraunces)    |
 | Fonts       | Fraunces + Nunito Sans, bundled in the repo (no Google Fonts)       |
@@ -50,8 +50,10 @@ must stay readable by every future version:
   and backup imports. Unreadable records stay in the database untouched.
 - **Fixtures.** `src/fixtures/` keeps a backup file per schema; tests import
   them. Never delete a migration step or a fixture.
-- **Backups.** "Vie varmuuskopio" writes one file with every photo, all input
-  and the color profile. The app asks the browser for persistent storage.
+- **Backups.** "Vie varmuuskopio" writes a zip: `vaatteet.json` (all input and
+  the color profile), `kuvat/` (original photos), `leikatut/` (cut-outs). Older
+  single-JSON backups still import. The app asks the browser for persistent
+  storage.
 
 Color tags (#musta, #vihreä, …) are dropped; hex colors cover them.
 
