@@ -128,27 +128,51 @@ export const Wardrobe = () => {
     })();
   }, []);
 
-  // A photo that can't be read (typically HEIC outside Safari) doesn't stop the rest.
-  const addFiles = async (picked: readonly File[]) => {
-    const files = imageFiles(picked);
-    if (files.length === 0) return;
-    const examples = garments.map((g) => ({ embedding: g.embedding, category: g.category }));
-    const failed: string[] = [];
-    for (const [i, file] of files.entries()) {
-      setBusy(`Tunnistetaan kuvaa ${i + 1} / ${files.length}…`);
+  // One queue for all added photos: drops while photos are still processing
+  // join the same run instead of starting a second loop that competes for the
+  // models and overwrites the counter. Refs because the run outlives renders.
+  const pending = useRef<File[]>([]);
+  const progress = useRef<{ done: number; total: number; failed: string[] }>({ done: 0, total: 0, failed: [] });
+  const running = useRef(false);
+  const garmentsRef = useRef(garments);
+  garmentsRef.current = garments;
+
+  const drain = async () => {
+    running.current = true;
+    for (let file = pending.current.shift(); file; file = pending.current.shift()) {
+      const { done, total } = progress.current;
+      setBusy(`Tunnistetaan kuvaa ${done + 1} / ${total}…`);
+      const examples = garmentsRef.current.map((g) => ({ embedding: g.embedding, category: g.category }));
       try {
         const draft = await draftFromPhoto(file, examples);
         setQueue((q) => [...q, draft]);
       } catch {
-        failed.push(file.name);
+        // Typically HEIC outside Safari; the rest of the photos still go through.
+        progress.current.failed.push(file.name);
       }
+      progress.current.done += 1;
     }
+    const { failed } = progress.current;
+    progress.current = { done: 0, total: 0, failed: [] };
+    running.current = false;
     setBusy(undefined);
     if (failed.length > 0) {
       setError(
         `Näitä kuvia ei saatu käsiteltyä: ${failed.join(", ")}. Jos ne ovat HEIC-kuvia, tallenna ne ` +
           "JPEG-muodossa (Kuvat-apissa Arkisto → Vie) tai käytä Safaria.",
       );
+    }
+  };
+
+  const addFiles = (picked: readonly File[]) => {
+    const files = imageFiles(picked);
+    if (files.length === 0) return;
+    pending.current.push(...files);
+    progress.current.total += files.length;
+    if (running.current) {
+      setBusy(`Tunnistetaan kuvaa ${progress.current.done + 1} / ${progress.current.total}…`);
+    } else {
+      void drain();
     }
   };
 
@@ -178,7 +202,7 @@ export const Wardrobe = () => {
       e.preventDefault();
       depth = 0;
       setDragging(false);
-      void addFilesRef.current([...(e.dataTransfer?.files ?? [])]);
+      addFilesRef.current([...(e.dataTransfer?.files ?? [])]);
     };
     window.addEventListener("dragenter", onEnter);
     window.addEventListener("dragleave", onLeave);
@@ -303,7 +327,7 @@ export const Wardrobe = () => {
         <label className="btn btn-primary" title="Lisää kuvia">
           <Icon name="plus" />
           <span className="add-label">Lisää kuvia</span>
-          <input type="file" accept="image/*" multiple hidden onChange={(e) => void addFiles([...(e.target.files ?? [])])} />
+          <input type="file" accept="image/*" multiple hidden onChange={(e) => addFiles([...(e.target.files ?? [])])} />
         </label>
         <details className="menu">
           <summary className="icon-btn" title="Lisää toimintoja">
