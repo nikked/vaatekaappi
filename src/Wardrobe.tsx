@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { exportBackup, importBackup } from "./backup";
 import {
   deleteGarment,
@@ -16,13 +16,14 @@ import {
   type StoredGarment,
 } from "./garment";
 import { Icon } from "./Icon";
-import { imageFiles } from "./image";
 import {
-  completeGarment,
-  type Draft,
-  draftFromPhoto,
-  isUpToDate,
-} from "./photo";
+  addPhotos,
+  dismissFailed,
+  getImports,
+  removeDraft,
+  subscribeImports,
+} from "./imports";
+import { completeGarment, isUpToDate } from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
 
 const download = (filename: string, content: Blob) => {
@@ -119,7 +120,8 @@ const completeAll = async (
 
 export const Wardrobe = () => {
   const [garments, setGarments] = useState<Garment[]>([]);
-  const [queue, setQueue] = useState<Draft[]>([]);
+  const imports = useSyncExternalStore(subscribeImports, getImports);
+  const queue = imports.drafts;
   const [editing, setEditing] = useState<Garment>();
   const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
@@ -158,70 +160,7 @@ export const Wardrobe = () => {
     })();
   }, []);
 
-  // One queue for all added photos: drops while photos are still processing
-  // join the same run instead of starting a second loop that competes for the
-  // models and overwrites the counter. Refs because the run outlives renders.
-  const pending = useRef<File[]>([]);
-  const progress = useRef<{ done: number; total: number; failed: string[] }>({
-    done: 0,
-    total: 0,
-    failed: [],
-  });
-  const running = useRef(false);
-  const garmentsRef = useRef(garments);
-  garmentsRef.current = garments;
-
-  const drain = async () => {
-    running.current = true;
-    for (
-      let file = pending.current.shift();
-      file;
-      file = pending.current.shift()
-    ) {
-      const { done, total } = progress.current;
-      setBusy(`Tunnistetaan kuvaa ${done + 1} / ${total}…`);
-      const examples = garmentsRef.current.map((g) => ({
-        embedding: g.embedding,
-        category: g.category,
-      }));
-      try {
-        const draft = await draftFromPhoto(file, examples);
-        setQueue((q) => [...q, draft]);
-      } catch {
-        // Typically HEIC outside Safari; the rest of the photos still go through.
-        progress.current.failed.push(file.name);
-      }
-      progress.current.done += 1;
-    }
-    const { failed } = progress.current;
-    progress.current = { done: 0, total: 0, failed: [] };
-    running.current = false;
-    setBusy(undefined);
-    if (failed.length > 0) {
-      setError(
-        `Näitä kuvia ei saatu käsiteltyä: ${failed.join(", ")}. Jos ne ovat HEIC-kuvia, tallenna ne ` +
-          "JPEG-muodossa (Kuvat-apissa Arkisto → Vie) tai käytä Safaria.",
-      );
-    }
-  };
-
-  const addFiles = (picked: readonly File[]) => {
-    const files = imageFiles(picked);
-    if (files.length === 0) return;
-    pending.current.push(...files);
-    progress.current.total += files.length;
-    if (running.current) {
-      setBusy(
-        `Tunnistetaan kuvaa ${progress.current.done + 1} / ${progress.current.total}…`,
-      );
-    } else {
-      void drain();
-    }
-  };
-
   // The whole screen accepts photos dragged from Finder or Photos.
-  const addFilesRef = useRef(addFiles);
-  addFilesRef.current = addFiles;
   const [dragging, setDragging] = useState(false);
   useEffect(() => {
     let depth = 0;
@@ -246,7 +185,7 @@ export const Wardrobe = () => {
       e.preventDefault();
       depth = 0;
       setDragging(false);
-      addFilesRef.current([...(e.dataTransfer?.files ?? [])]);
+      addPhotos([...(e.dataTransfer?.files ?? [])]);
     };
     window.addEventListener("dragenter", onEnter);
     window.addEventListener("dragleave", onLeave);
@@ -328,9 +267,9 @@ export const Wardrobe = () => {
           cancelLabel="Ohita"
           onSubmit={async (g) => {
             await save(g);
-            setQueue((q) => q.slice(1));
+            removeDraft(next.garment.id);
           }}
-          onCancel={() => setQueue((q) => q.slice(1))}
+          onCancel={() => removeDraft(next.garment.id)}
         />
       </>
     );
@@ -391,7 +330,7 @@ export const Wardrobe = () => {
             accept="image/*"
             multiple
             hidden
-            onChange={(e) => addFiles([...(e.target.files ?? [])])}
+            onChange={(e) => addPhotos([...(e.target.files ?? [])])}
           />
         </label>
         <details className="menu">
@@ -443,6 +382,20 @@ export const Wardrobe = () => {
       </div>
 
       {error && <p className="error">{error}</p>}
+      {imports.failed.length > 0 && (
+        <div className="error">
+          Näitä kuvia ei saatu käsiteltyä: {imports.failed.join(", ")}. Jos ne
+          ovat HEIC-kuvia, tallenna ne JPEG-muodossa (Kuvat-apissa Arkisto →
+          Vie) tai käytä Safaria.{" "}
+          <button
+            type="button"
+            className="btn btn-soft"
+            onClick={dismissFailed}
+          >
+            OK
+          </button>
+        </div>
+      )}
       {busy && (
         <div className="notice">
           <p>{busy}</p>

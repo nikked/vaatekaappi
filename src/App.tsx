@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ColorProfile } from "./ColorProfile";
 import { requestPersistentStorage } from "./db";
 import { Icon, type IconName } from "./Icon";
+import { ImportStatus } from "./ImportStatus";
 import { ModelBanner } from "./ModelBanner";
 import { warmUp } from "./models";
 import { Outfits } from "./Outfits";
@@ -44,6 +45,7 @@ export const App = () => {
             </button>
           ))}
         </nav>
+        <ImportStatus onOpen={() => setScreen("Vaatekaappi")} />
       </header>
       <ModelBanner />
       <main>

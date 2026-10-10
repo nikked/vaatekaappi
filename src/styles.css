@@ -1204,3 +1204,36 @@ kbd {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* ---------- Background photo import ---------- */
+.import-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-left: auto;
+  padding: 7px var(--s-4);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--c-mustard) 22%, var(--c-surface));
+  color: var(--c-text);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+}
+.import-status progress {
+  width: 60px;
+  height: 6px;
+  appearance: none;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--c-line);
+  overflow: hidden;
+}
+.import-status progress::-webkit-progress-bar {
+  background: var(--c-line);
+}
+.import-status progress::-webkit-progress-value {
+  background: var(--c-terracotta);
+}
+.import-status progress::-moz-progress-bar {
+  background: var(--c-terracotta);
+}
