@@ -196,6 +196,20 @@ export const GarmentForm = ({
           )}
         </div>
 
+        {(CATEGORIES[draft.category].slot === "bottom" ||
+          CATEGORIES[draft.category].slot === "dress") && (
+          <label className="checkbox-field">
+            <input
+              type="checkbox"
+              checked={draft.noBiking}
+              onChange={(e) =>
+                setDraft({ ...draft, noBiking: e.target.checked })
+              }
+            />
+            Ei sovellu pyöräilyyn
+          </label>
+        )}
+
         <div>
           <div className="field-label">Värit</div>
           <div className="swatches">
@@ -286,16 +300,6 @@ export const GarmentForm = ({
               on={draft.warmth === "cool"}
               onClick={() => toggleWarmth("cool")}
             />
-            {(CATEGORIES[draft.category].slot === "bottom" ||
-              CATEGORIES[draft.category].slot === "dress") && (
-              <Toggle
-                label="pyöräily"
-                on={draft.bikeable}
-                onClick={() =>
-                  setDraft({ ...draft, bikeable: !draft.bikeable })
-                }
-              />
-            )}
             <Toggle
               label="lempivaatteet"
               on={draft.favourite}

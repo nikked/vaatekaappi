@@ -139,9 +139,10 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 ### 2. Outfits (done)
 All pure functions over `Garment[]`:
 - **Generate:** fill template slots from the wardrobe.
-- **Filter:** every garment has the chosen occasion; Pyöräily requires a
-  bikeable bottom (or no bottom); at most one patterned item. Warmth is
-  stored but not used for filtering.
+- **Filter:** every garment has the chosen occasion; at most one patterned
+  item. Pyöräily: all outfits, only bikeable ones, or only ones to avoid on a
+  bike. A bottom or dress marked "Ei sovellu pyöräilyyn" (`noBiking`, its own
+  form field) makes the outfit unbikeable. Warmth is stored but not used.
 - **Score:**
   - Palette fit: distance of the worst-fitting garment's dominant color to the
     nearest palette color (a mean would reward adding any on-palette layer).

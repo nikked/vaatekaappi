@@ -1130,3 +1130,14 @@ kbd {
   font-weight: 700;
   color: var(--c-text);
 }
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 700;
+}
+.checkbox-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c-terracotta);
+}

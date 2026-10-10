@@ -65,7 +65,7 @@ export type Warmth = (typeof WARMTHS)[number];
 export type Rgb = readonly [number, number, number];
 
 // Bumped whenever the stored shape changes; migrate.ts upgrades older records.
-export const GARMENT_SCHEMA = 2;
+export const GARMENT_SCHEMA = 3;
 
 // What the user entered: kept forever and migrated on every schema change.
 export type GarmentInput = {
@@ -82,7 +82,7 @@ export type GarmentInput = {
   pattern: Pattern;
   occasions: Occasion[];
   warmth?: Warmth;
-  bikeable: boolean;
+  noBiking: boolean; // only meaningful for bottoms (Alaosa) and dresses
   favourite: boolean;
 };
 
