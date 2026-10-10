@@ -164,10 +164,14 @@ All pure functions over `Garment[]`:
   end to end on the real wardrobe and check that the top-ranked outfits look
   right.
 
-### 3. Apply the design
+### 3. Apply the design (done)
 - Copy theme tokens and layouts from `mockups/index.html` into the app; bundle
   the fonts.
 - **Verify:** compare desktop and phone screenshots against the mockup.
+- Deviation: "Lisää kuvia" and the "⋯" menu sit in the Vaatekaappi heading,
+  not the top bar, so wardrobe state stays in the Wardrobe screen.
+- Stored cut-outs are cropped to the garment; embeddings still use the
+  uncropped cut-out (cropping dropped category accuracy from 6/7 to 4/7).
 
 ### Parallel: try-on spike (no code)
 - In the ChatGPT app (existing subscription): own photo + 2–3 garment photos,

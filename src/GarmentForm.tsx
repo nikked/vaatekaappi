@@ -1,220 +1,240 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { hexToRgb, rgbToHex } from "./color";
+import { Icon } from "./Icon";
 import { useObjectUrl } from "./useObjectUrl";
-import {
-  CATEGORIES,
-  OCCASIONS,
-  PATTERNS,
-  WARMTHS,
-  isCategory,
-  isOneOf,
-  type Category,
-  type Garment,
-  type Occasion,
-  type Pattern,
-  type Warmth,
-} from "./garment";
+import { CATEGORIES, isCategory, type Category, type Garment, type Occasion, type Rgb } from "./garment";
 
-const PATTERN_LABELS: Record<Pattern, string> = { solid: "Yksivärinen", patterned: "Kuviollinen" };
-const OCCASION_LABELS: Record<Occasion, string> = { everyday: "Arki", party: "Juhla" };
-const WARMTH_LABELS: Record<Warmth, string> = { warm: "Lämmin", cool: "Viileä" };
 const MAX_COLORS = 2;
+// Grey start for a new color: the user picks the real one right after adding.
+const NEW_COLOR: Rgb = [128, 128, 128];
+
+export const rgbCss = ([r, g, b]: Rgb) => `rgb(${r} ${g} ${b})`;
+export const leafName = (category: Category) => category.split(" > ").at(-1) ?? category;
+
+// Card and photo backgrounds are tinted with the garment's main color.
+export const tintStyle = (colors: readonly Rgb[]): CSSProperties & { "--tint"?: string } =>
+  colors[0] ? { "--tint": rgbCss(colors[0]) } : {};
+
+const toggled = <T,>(values: readonly T[], value: T, order: readonly T[]): T[] =>
+  order.filter((v) => (v === value ? !values.includes(v) : values.includes(v)));
 
 type Props = {
   garment: Garment;
   suggestedCategories?: readonly Category[];
+  queue?: readonly Garment[];
   submitLabel: string;
+  cancelLabel: string;
   onSubmit: (garment: Garment) => void;
   onCancel: () => void;
   onDelete?: () => void;
 };
 
+const QueueThumb = ({ garment, now }: { garment: Garment; now: boolean }) => (
+  <span className={now ? "now" : undefined} style={tintStyle(garment.colors)}>
+    <img src={useObjectUrl(garment.cutout)} alt="" />
+  </span>
+);
+
+const Toggle = ({ on, onClick, label }: { on: boolean; onClick: () => void; label: string }) => (
+  <button type="button" className="chip toggle" aria-pressed={on} onClick={onClick}>
+    {label}
+  </button>
+);
+
 export const GarmentForm = ({
   garment,
   suggestedCategories = [],
+  queue = [],
   submitLabel,
+  cancelLabel,
   onSubmit,
   onCancel,
   onDelete,
 }: Props) => {
   const [draft, setDraft] = useState(garment);
+  const [pickCategory, setPickCategory] = useState(suggestedCategories.length === 0);
   const imageUrl = useObjectUrl(garment.cutout);
+
+  const toggleOccasion = (o: Occasion) =>
+    setDraft({ ...draft, occasions: toggled(draft.occasions, o, ["everyday", "party"]) });
+
+  const toggleWarmth = (w: "warm" | "cool") => {
+    const { warmth: _, ...rest } = draft;
+    setDraft(draft.warmth === w ? rest : { ...rest, warmth: w });
+  };
 
   return (
     <form
-      className="garment-form"
+      className="review"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(draft);
       }}
     >
-      <img src={imageUrl} alt="" />
-      <div className="fields">
-        <label>
-          Nimi
-          <input
-            autoFocus
-            value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-          />
-        </label>
-
-        <label>
-          Kuvaus
-          <input
-            value={draft.description}
-            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-          />
-        </label>
-
-        {suggestedCategories.length > 0 && (
-          <div className="suggestions">
-            {suggestedCategories.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-pressed={draft.category === c}
-                onClick={() => setDraft({ ...draft, category: c })}
-              >
-                {c.split(" > ").at(-1)}
-              </button>
+      <div>
+        <div className="photo" style={tintStyle(draft.colors)}>
+          <img src={imageUrl} alt="" />
+        </div>
+        {queue.length > 1 && (
+          <div className="queue">
+            {queue.map((g, i) => (
+              <QueueThumb key={g.id} garment={g} now={i === 0} />
             ))}
           </div>
         )}
+      </div>
 
-        <label>
-          Kategoria
-          <select
-            value={draft.category}
-            onChange={(e) => {
-              const category = e.target.value;
-              if (isCategory(category)) setDraft({ ...draft, category });
-            }}
-          >
-            {Object.keys(CATEGORIES).map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-        </label>
+      <div className="fields">
+        <div>
+          <div className="field-label">Nimi</div>
+          <input
+            className="text-input"
+            autoFocus
+            value={draft.name}
+            placeholder="esim. Liila neulepaita"
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+          />
+        </div>
 
-        <div className="colors">
-          Värit
-          {draft.colors.map((c, i) => (
-            <span key={i}>
-              <input
-                type="color"
-                value={rgbToHex(c)}
-                onChange={(e) => {
-                  const rgb = hexToRgb(e.target.value);
-                  if (rgb) setDraft({ ...draft, colors: draft.colors.map((old, j) => (j === i ? rgb : old)) });
-                }}
-              />
-              <button
-                type="button"
-                aria-label="Poista väri"
-                onClick={() => setDraft({ ...draft, colors: draft.colors.filter((_, j) => j !== i) })}
-              >
-                ×
+        <div>
+          <div className="field-label">
+            Kategoria {suggestedCategories.length > 0 && <small>ehdotukset kuvan perusteella</small>}
+          </div>
+          {suggestedCategories.length > 0 && (
+            <div className="suggest">
+              {suggestedCategories.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className="chip"
+                  aria-pressed={!pickCategory && draft.category === c}
+                  onClick={() => {
+                    setPickCategory(false);
+                    setDraft({ ...draft, category: c });
+                  }}
+                >
+                  {leafName(c)}
+                </button>
+              ))}
+              <button type="button" className="chip" aria-pressed={pickCategory} onClick={() => setPickCategory(true)}>
+                Muu…
               </button>
-            </span>
-          ))}
-          {draft.colors.length < MAX_COLORS && (
-            <button
-              type="button"
-              onClick={() => setDraft({ ...draft, colors: [...draft.colors, [128, 128, 128]] })}
+            </div>
+          )}
+          {pickCategory ? (
+            <select
+              className="select-input path"
+              value={draft.category}
+              onChange={(e) => {
+                const category = e.target.value;
+                if (isCategory(category)) setDraft({ ...draft, category });
+              }}
             >
-              Lisää väri
-            </button>
+              {Object.keys(CATEGORIES).map((c) => (
+                <option key={c} value={c}>
+                  {c.replaceAll(" > ", " › ")}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="path hint">{draft.category.replaceAll(" > ", " › ")}</div>
           )}
         </div>
 
-        <label>
-          Kuviointi
-          <select
-            value={draft.pattern}
-            onChange={(e) => {
-              const pattern = e.target.value;
-              if (isOneOf(PATTERNS)(pattern)) setDraft({ ...draft, pattern });
-            }}
-          >
-            {PATTERNS.map((p) => (
-              <option key={p} value={p}>
-                {PATTERN_LABELS[p]}
-              </option>
+        <div>
+          <div className="field-label">Värit</div>
+          <div className="swatches">
+            {draft.colors.map((c, i) => (
+              <label key={i} className="swatch" style={{ background: rgbCss(c) }} title={rgbToHex(c)}>
+                <input
+                  type="color"
+                  value={rgbToHex(c)}
+                  aria-label={`Väri ${i + 1}`}
+                  onChange={(e) => {
+                    const rgb = hexToRgb(e.target.value);
+                    if (rgb) setDraft({ ...draft, colors: draft.colors.map((old, j) => (j === i ? rgb : old)) });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="remove"
+                  aria-label="Poista väri"
+                  onClick={() => setDraft({ ...draft, colors: draft.colors.filter((_, j) => j !== i) })}
+                >
+                  ×
+                </button>
+              </label>
             ))}
-          </select>
-        </label>
+            {draft.colors.length < MAX_COLORS && (
+              <button
+                type="button"
+                className="swatch-add"
+                title="Lisää väri"
+                onClick={() => setDraft({ ...draft, colors: [...draft.colors, NEW_COLOR] })}
+              >
+                <Icon name="plus" />
+              </button>
+            )}
+            <span className="hint">Napauta väriä muuttaaksesi</span>
+          </div>
+        </div>
 
-        <fieldset>
-          <legend>Tilanne</legend>
-          {OCCASIONS.map((o) => (
-            <label key={o}>
-              <input
-                type="checkbox"
-                checked={draft.occasions.includes(o)}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    occasions: e.target.checked
-                      ? OCCASIONS.filter((x) => x === o || draft.occasions.includes(x))
-                      : draft.occasions.filter((x) => x !== o),
-                  })
-                }
-              />
-              {OCCASION_LABELS[o]}
-            </label>
-          ))}
-        </fieldset>
-
-        <label>
-          Lämpö
-          <select
-            value={draft.warmth ?? ""}
-            onChange={(e) => {
-              const warmth = e.target.value;
-              const { warmth: _, ...rest } = draft;
-              setDraft(isOneOf(WARMTHS)(warmth) ? { ...rest, warmth } : rest);
-            }}
-          >
-            <option value="">–</option>
-            {WARMTHS.map((w) => (
-              <option key={w} value={w}>
-                {WARMTH_LABELS[w]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {CATEGORIES[draft.category] === "bottom" && (
-          <label>
-            <input
-              type="checkbox"
-              checked={draft.bikeable}
-              onChange={(e) => setDraft({ ...draft, bikeable: e.target.checked })}
+        <div>
+          <div className="field-label">Tunnisteet</div>
+          <div className="toggles">
+            <Toggle
+              label="yksivärinen"
+              on={draft.pattern === "solid"}
+              onClick={() => setDraft({ ...draft, pattern: "solid" })}
             />
-            Pyöräily
-          </label>
-        )}
+            <Toggle
+              label="kuviollinen"
+              on={draft.pattern === "patterned"}
+              onClick={() => setDraft({ ...draft, pattern: "patterned" })}
+            />
+            <Toggle label="arki" on={draft.occasions.includes("everyday")} onClick={() => toggleOccasion("everyday")} />
+            <Toggle label="juhla" on={draft.occasions.includes("party")} onClick={() => toggleOccasion("party")} />
+            <Toggle label="lämmin" on={draft.warmth === "warm"} onClick={() => toggleWarmth("warm")} />
+            <Toggle label="viileä" on={draft.warmth === "cool"} onClick={() => toggleWarmth("cool")} />
+            {CATEGORIES[draft.category] === "bottom" && (
+              <Toggle
+                label="pyöräily"
+                on={draft.bikeable}
+                onClick={() => setDraft({ ...draft, bikeable: !draft.bikeable })}
+              />
+            )}
+            <Toggle
+              label="lempivaatteet"
+              on={draft.favourite}
+              onClick={() => setDraft({ ...draft, favourite: !draft.favourite })}
+            />
+          </div>
+        </div>
 
-        <label>
+        <div>
+          <div className="field-label">Kuvaus</div>
           <input
-            type="checkbox"
-            checked={draft.favourite}
-            onChange={(e) => setDraft({ ...draft, favourite: e.target.checked })}
+            className="text-input small"
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           />
-          Lempivaate
-        </label>
+        </div>
 
-        <div className="actions">
-          <button type="submit">{submitLabel}</button>
-          <button type="button" onClick={onCancel}>
-            Peruuta
-          </button>
+        <div className="review-actions">
+          <span className="kbd">
+            <kbd>Enter</kbd> tallentaa
+          </span>
           {onDelete && (
-            <button type="button" onClick={onDelete}>
+            <button type="button" className="btn btn-ghost" onClick={onDelete}>
               Poista
             </button>
           )}
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>
+            {cancelLabel}
+          </button>
+          <button type="submit" className="btn btn-primary">
+            {submitLabel}
+          </button>
         </div>
       </div>
     </form>

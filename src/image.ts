@@ -44,3 +44,34 @@ export const withAlpha = (
   for (let i = 0; i < mask.length; i++) out[i * 4 + 3] = mask[i] ?? 0;
   return out;
 };
+
+export type Bounds = { x: number; y: number; width: number; height: number };
+
+/** Smallest box containing every pixel with alpha ≥ `minAlpha`, or undefined if none. */
+export const opaqueBounds = (
+  rgba: Uint8ClampedArray | Uint8Array,
+  width: number,
+  minAlpha = 128,
+): Bounds | undefined => {
+  const height = rgba.length / 4 / width;
+  let [minX, minY, maxX, maxY] = [width, height, -1, -1];
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if ((rgba[(y * width + x) * 4 + 3] ?? 0) < minAlpha) continue;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  return maxX < 0 ? undefined : { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+};
+
+export const cropRgba = (rgba: Uint8ClampedArray | Uint8Array, width: number, b: Bounds): Uint8ClampedArray => {
+  const out = new Uint8ClampedArray(b.width * b.height * 4);
+  for (let row = 0; row < b.height; row++) {
+    const from = ((b.y + row) * width + b.x) * 4;
+    out.set(rgba.subarray(from, from + b.width * 4), row * b.width * 4);
+  }
+  return out;
+};
