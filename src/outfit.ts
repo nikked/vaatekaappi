@@ -1,0 +1,135 @@
+import { deltaE, rgbToLab, type Lab } from "./color";
+import { CATEGORIES, type Garment, type Occasion, type Rgb, type Slot, type Warmth } from "./garment";
+import { WARM_AUTUMN } from "./palette";
+
+type OutfitTemplate = {
+  required: readonly Slot[];
+  optional: readonly Slot[];
+};
+
+export type Outfit = {
+  garmentIds: string[];
+  score: number;
+};
+
+export type OutfitFilter = {
+  occasion: Occasion;
+  weather: Warmth;
+  cycling: boolean;
+};
+
+type Lch = readonly [number, number, number];
+
+export const TEMPLATES: readonly OutfitTemplate[] = [
+  { required: ["top", "bottom"], optional: ["outer"] },
+  { required: ["dress"], optional: ["outer"] },
+];
+
+// Lab chroma below this counts as neutral: greys, black, white, but also cream
+// (~23), beige and dark brown, which are worn as neutrals. Camel and denim
+// (~31) stay chromatic, so they are judged by hue like any other color.
+export const NEUTRAL_CHROMA = 25;
+// Wide enough that classic autumn pairs (rust + olive, ~55°) count as harmonious.
+export const ANALOGOUS_MAX_DEGREES = 60;
+export const COMPLEMENTARY_TOLERANCE_DEGREES = 20;
+export const MAX_HUES = 2;
+export const PAIR_BONUS = 1;
+export const CLASH_PENALTY = 1;
+export const EXTRA_HUE_PENALTY = 1;
+// Harmony is a mean over pairs in [-1, 1]; at this weight a garment ΔE 20 from
+// the palette (clearly off-palette) costs as much as one full clash.
+export const PALETTE_WEIGHT = 1 / 20;
+
+const slotOf = (garment: Garment): Slot | null => CATEGORIES[garment.category];
+
+const cartesian = <T>(choices: readonly (readonly T[])[]): T[][] =>
+  choices.reduce<T[][]>(
+    (combos, options) => combos.flatMap((combo) => options.map((o) => [...combo, o])),
+    [[]],
+  );
+
+export const generateOutfits = (garments: readonly Garment[]): Garment[][] =>
+  TEMPLATES.flatMap(({ required, optional }) => {
+    const inSlot = (slot: Slot): (Garment | null)[] => garments.filter((g) => slotOf(g) === slot);
+    const choices = [...required.map(inSlot), ...optional.map((slot) => [null, ...inSlot(slot)])];
+    return cartesian(choices).map((combo) => combo.filter((g) => g !== null));
+  });
+
+// A garment's warmth matching the weather is the wrong match: a warm knit on a
+// warm day, or an airy garment on a cool day. Untagged garments fit any weather.
+export const fitsFilter = (garment: Garment, { occasion, weather, cycling }: OutfitFilter): boolean =>
+  garment.occasions.includes(occasion) &&
+  garment.warmth !== weather &&
+  (!cycling || slotOf(garment) !== "bottom" || garment.bikeable);
+
+export const hasAtMostOnePattern = (outfit: readonly Garment[]): boolean =>
+  outfit.filter((g) => g.pattern !== "solid").length <= 1;
+
+const dominantColors = (outfit: readonly Garment[]): Rgb[] =>
+  outfit.flatMap((g) => g.colors.slice(0, 1));
+
+export const labToLch = ([l, a, b]: Lab): Lch => [
+  l,
+  Math.hypot(a, b),
+  ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360,
+];
+
+export const hueDistance = (a: number, b: number): number => {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+};
+
+const mean = (values: readonly number[]): number =>
+  values.length === 0 ? 0 : values.reduce((s, v) => s + v, 0) / values.length;
+
+// The worst-fitting garment, not the mean: with a mean, adding any on-palette
+// layer would lift the score and that layer would end up in every outfit.
+export const paletteDistance = (outfit: readonly Garment[], palette: readonly Rgb[]): number => {
+  const paletteLabs = palette.map(rgbToLab);
+  return Math.max(
+    0,
+    ...dominantColors(outfit).map((color) => {
+      const lab = rgbToLab(color);
+      return Math.min(...paletteLabs.map((p) => deltaE(lab, p)));
+    }),
+  );
+};
+
+export const pairScore = (hueA: number, hueB: number): number => {
+  const d = hueDistance(hueA, hueB);
+  if (d <= ANALOGOUS_MAX_DEGREES) return PAIR_BONUS;
+  if (Math.abs(d - 180) <= COMPLEMENTARY_TOLERANCE_DEGREES) return PAIR_BONUS;
+  return -CLASH_PENALTY;
+};
+
+// Groups hues within the analogous range, so two rust garments count as one hue.
+const distinctHueCount = (hues: readonly number[]): number =>
+  hues.reduce<number[]>(
+    (groups, hue) =>
+      groups.some((g) => hueDistance(g, hue) <= ANALOGOUS_MAX_DEGREES) ? groups : [...groups, hue],
+    [],
+  ).length;
+
+// With no color pairs (one color + neutrals) the outfit gets the same score as
+// a good pair, so adding a matching layer is neither rewarded nor punished.
+export const colorHarmony = (outfit: readonly Garment[]): number => {
+  const hues = dominantColors(outfit)
+    .map((color) => labToLch(rgbToLab(color)))
+    .filter(([, chroma]) => chroma >= NEUTRAL_CHROMA)
+    .map(([, , hue]) => hue);
+  const pairs = hues.flatMap((a, i) => hues.slice(i + 1).map((b) => pairScore(a, b)));
+  const extraHues = Math.max(0, distinctHueCount(hues) - MAX_HUES);
+  return (pairs.length === 0 ? PAIR_BONUS : mean(pairs)) - extraHues * EXTRA_HUE_PENALTY;
+};
+
+export const scoreOutfit = (outfit: readonly Garment[], palette: readonly Rgb[]): number =>
+  colorHarmony(outfit) - PALETTE_WEIGHT * paletteDistance(outfit, palette);
+
+export const rankOutfits = (garments: readonly Garment[], filter: OutfitFilter): Outfit[] =>
+  generateOutfits(garments.filter((g) => fitsFilter(g, filter)))
+    .filter(hasAtMostOnePattern)
+    .map((outfit) => ({
+      garmentIds: outfit.map((g) => g.id),
+      score: scoreOutfit(outfit, WARM_AUTUMN),
+    }))
+    .sort((a, b) => b.score - a.score);
