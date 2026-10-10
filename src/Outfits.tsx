@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadGarments, loadProfile } from "./db";
 import {
-  isProcessed,
   type Garment,
   type Occasion,
   type Slot,
   type Warmth,
 } from "./garment";
 import { rgbCss } from "./GarmentForm";
+import { isUpToDate } from "./photo";
 import { Icon, type IconName } from "./Icon";
 import {
   SCORE_DOTS,
@@ -152,8 +152,8 @@ export const Outfits = () => {
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
 
   useEffect(() => {
-    void loadGarments().then((stored) =>
-      setGarments(stored.filter(isProcessed)),
+    void loadGarments().then(({ garments: stored }) =>
+      setGarments(stored.filter(isUpToDate)),
     );
     void loadProfile().then(setProfile);
   }, []);

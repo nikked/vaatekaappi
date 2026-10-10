@@ -22,6 +22,10 @@ const SEGMENTER = "briaai/RMBG-1.4";
 // Picked over CLIP on the example garments: 6/7 vs 4/7 categories right first.
 const EMBEDDER = "Xenova/siglip-base-patch16-224";
 
+// Stored with every cut-out and embedding. Change it whenever the models or how
+// their output is post-processed change: older garments are then recomputed.
+export const DERIVED_BY = `${SEGMENTER}+${EMBEDDER}+crop`;
+
 // Left undefined, transformers.js uses WASM in the browser and CPU in Node.
 const device = globalThis.navigator?.gpu ? "webgpu" : undefined;
 

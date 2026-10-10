@@ -1,21 +1,20 @@
 import { env } from "@huggingface/transformers";
 import { describe, expect, it } from "vitest";
-import { isCategory, isOneOf, PATTERNS, type Category, type Pattern } from "./garment";
+import { isRecord, migrateGarment } from "./migrate";
 import { embedCutout, prompts, segment } from "./models";
 import { rankCategories, suggestPattern, type LabelledEmbedding } from "./suggest";
 
-// Opt-in: downloads ~320 MB of models once and needs the local example photos.
+// Opt-in: downloads ~250 MB of models once and needs the local example photos.
 // Run with: VITE_INTEGRATION=1 npx vitest run src/models.integration.test.ts
 const files = import.meta.glob<{ default: unknown[] }>("../initial_data/examples.json", { eager: true });
 const raw = Object.values(files)[0]?.default ?? [];
 
-type Example = { id: string; category: Category; pattern: Pattern };
-const examples: Example[] = raw.flatMap((e) =>
-  typeof e === "object" && e !== null && "id" in e && "category" in e && "pattern" in e &&
-  typeof e.id === "string" && isCategory(e.category) && isOneOf(PATTERNS)(e.pattern)
-    ? [{ id: e.id, category: e.category, pattern: e.pattern }]
-    : [],
-);
+// Through the real migration, so the hand-made file's Finnish paths become ids.
+// That file keeps colors as hex strings; they don't matter here.
+const examples = raw.map((e) => {
+  const { id, category, pattern } = migrateGarment(isRecord(e) ? { ...e, image: new Blob(), colors: [] } : e);
+  return { id, category, pattern };
+});
 
 env.cacheDir = "initial_data/.models";
 

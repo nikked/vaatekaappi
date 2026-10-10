@@ -37,34 +37,21 @@ photo-based try-on, profile photos.
 
 ## Data model
 
-```ts
-type Garment = {
-  id: string;
-  name: string;
-  description: string;
-  image: Blob;
-  category: Category;     // leaf of the category tree
-  colors: Rgb[];          // 1–2, confirmed by the user
-  pattern: "solid" | "patterned";    // #yksivärinen / #kuviollinen
-  occasions: Occasion[];  // #arki → everyday, #juhla → party
-  warmth?: "warm" | "cool";          // #lämmin / #viileä: garment warmth
-  bikeable: boolean;      // #pyöräily, only meaningful for bottoms
-  favourite: boolean;     // #lempivaatteet
-  embedding: Float32Array;
-};
+Defined in `src/garment.ts`. The user enters her clothes once, so stored data
+must stay readable by every future version:
 
-type Slot = "top" | "bottom" | "dress" | "outer";
-
-type OutfitTemplate = {
-  required: Slot[];
-  optional: Slot[];
-};
-
-type Outfit = {
-  garmentIds: string[];
-  score: number;
-};
-```
+- **Input vs derived.** What she enters (photo at max 2048 px, name,
+  description, brand, material, fit/style notes, category, colors, tags) is
+  kept forever. Cut-out and embedding are derived, labelled with the models
+  that made them (`derivedBy`), and recomputed from the photo when that changes.
+- **Stable category ids** (`layer-blazer`); the Finnish tree is only a label.
+- **Versioned records.** Every garment has `schema`; `src/migrate.ts` turns any
+  older shape into the current one. Used for both the database (on every read)
+  and backup imports. Unreadable records stay in the database untouched.
+- **Fixtures.** `src/fixtures/` keeps a backup file per schema; tests import
+  them. Never delete a migration step or a fixture.
+- **Backups.** "Vie varmuuskopio" writes one file with every photo, all input
+  and the color profile. The app asks the browser for persistent storage.
 
 Color tags (#musta, #vihreä, …) are dropped; hex colors cover them.
 

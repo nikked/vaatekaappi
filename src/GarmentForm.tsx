@@ -2,14 +2,24 @@ import { useState, type CSSProperties } from "react";
 import { hexToRgb, rgbToHex } from "./color";
 import { Icon } from "./Icon";
 import { useObjectUrl } from "./useObjectUrl";
-import { CATEGORIES, isCategory, type Category, type Garment, type Occasion, type Rgb } from "./garment";
+import {
+  CATEGORIES,
+  categoryLabel,
+  categoryLeaf,
+  isCategory,
+  type Category,
+  type Garment,
+  type Occasion,
+  type Rgb,
+} from "./garment";
 
 const MAX_COLORS = 2;
 // Grey start for a new color: the user picks the real one right after adding.
 const NEW_COLOR: Rgb = [128, 128, 128];
 
 export const rgbCss = ([r, g, b]: Rgb) => `rgb(${r} ${g} ${b})`;
-export const leafName = (category: Category) => category.split(" > ").at(-1) ?? category;
+// Suggestions only: material is free text so unusual fabrics can be entered.
+const MATERIALS = ["puuvilla", "villa", "farkku", "pellava", "viskoosi", "polyesteri", "silkki", "nahka", "neule"];
 
 // Card and photo backgrounds are tinted with the garment's main color.
 export const tintStyle = (colors: readonly Rgb[]): CSSProperties & { "--tint"?: string } =>
@@ -113,7 +123,7 @@ export const GarmentForm = ({
                     setDraft({ ...draft, category: c });
                   }}
                 >
-                  {leafName(c)}
+                  {categoryLeaf(c)}
                 </button>
               ))}
               <button type="button" className="chip" aria-pressed={pickCategory} onClick={() => setPickCategory(true)}>
@@ -130,14 +140,16 @@ export const GarmentForm = ({
                 if (isCategory(category)) setDraft({ ...draft, category });
               }}
             >
-              {Object.keys(CATEGORIES).map((c) => (
-                <option key={c} value={c}>
-                  {c.replaceAll(" > ", " › ")}
-                </option>
-              ))}
+              {Object.keys(CATEGORIES)
+                .filter(isCategory)
+                .map((c) => (
+                  <option key={c} value={c}>
+                    {categoryLabel(c)}
+                  </option>
+                ))}
             </select>
           ) : (
-            <div className="path hint">{draft.category.replaceAll(" > ", " › ")}</div>
+            <div className="path hint">{categoryLabel(draft.category)}</div>
           )}
         </div>
 
@@ -196,7 +208,7 @@ export const GarmentForm = ({
             <Toggle label="juhla" on={draft.occasions.includes("party")} onClick={() => toggleOccasion("party")} />
             <Toggle label="lämmin" on={draft.warmth === "warm"} onClick={() => toggleWarmth("warm")} />
             <Toggle label="viileä" on={draft.warmth === "cool"} onClick={() => toggleWarmth("cool")} />
-            {CATEGORIES[draft.category] === "bottom" && (
+            {CATEGORIES[draft.category].slot === "bottom" && (
               <Toggle
                 label="pyöräily"
                 on={draft.bikeable}
@@ -217,6 +229,43 @@ export const GarmentForm = ({
             className="text-input small"
             value={draft.description}
             onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+        </div>
+
+        <div className="field-row">
+          <div>
+            <div className="field-label">Merkki</div>
+            <input
+              className="text-input small"
+              value={draft.brand}
+              onChange={(e) => setDraft({ ...draft, brand: e.target.value })}
+            />
+          </div>
+          <div>
+            <div className="field-label">Materiaali</div>
+            <input
+              className="text-input small"
+              list="materials"
+              value={draft.material}
+              onChange={(e) => setDraft({ ...draft, material: e.target.value })}
+            />
+            <datalist id="materials">
+              {MATERIALS.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+
+        <div>
+          <div className="field-label">
+            Huomioita <small>istuvuus ja tyyli</small>
+          </div>
+          <input
+            className="text-input small"
+            placeholder="esim. liian pitkä korkkareilla"
+            value={draft.notes}
+            onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
           />
         </div>
 

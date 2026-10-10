@@ -9,9 +9,9 @@ import {
   type LabelledEmbedding,
 } from "./suggest";
 
-const SKIRT: Category = "Alaosa > Hameet > Pitkät hameet";
-const TROUSERS: Category = "Alaosa > Housut";
-const TEE: Category = "Yläosa > Lyhythihaiset > T-paidat";
+const SKIRT: Category = "bottom-skirt-long";
+const TROUSERS: Category = "bottom-trousers";
+const TEE: Category = "top-short-tee";
 
 // Every category gets its own axis in a small space, so similarities are easy to reason about.
 const categories = Object.keys(CATEGORY_PROMPTS).filter(isCategory);

@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { exportWardrobe, importWardrobe } from "./backup";
 import { deleteGarment, loadGarments, loadProfile, replaceGarments, saveGarment, saveProfile } from "./db";
-import { GarmentForm, leafName, rgbCss, tintStyle } from "./GarmentForm";
+import { GarmentForm, rgbCss, tintStyle } from "./GarmentForm";
 import { Icon } from "./Icon";
-import { downscale } from "./image";
-import { completeGarment, draftFromPhoto, type Draft } from "./photo";
+import { completeGarment, draftFromPhoto, isUpToDate, type Draft } from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
-import { isProcessed, type Garment, type MaybeProcessedGarment } from "./garment";
+import { categoryGroup, categoryLeaf, type Garment, type StoredGarment } from "./garment";
 
 const download = (filename: string, content: string) => {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -30,7 +29,7 @@ type Filter = "all" | "favourites" | (typeof GROUPS)[number][1];
 const closeMenu = (inside: Element) => inside.closest("details")?.removeAttribute("open");
 
 const matches = (g: Garment, filter: Filter): boolean =>
-  filter === "all" ? true : filter === "favourites" ? g.favourite : g.category.split(" > ")[0] === filter;
+  filter === "all" ? true : filter === "favourites" ? g.favourite : categoryGroup(g.category) === filter;
 
 const Card = ({
   garment,
@@ -64,19 +63,29 @@ const Card = ({
         ))}
       </span>
     </div>
-    <p className="card-sub">{leafName(garment.category)}</p>
+    <p className="card-sub">{categoryLeaf(garment.category)}</p>
   </article>
 );
 
-// One at a time: the models share one GPU/CPU, so parallel runs aren't faster.
+// One at a time, each saved as soon as it's done: the models share one GPU/CPU,
+// and a closed tab or failed download loses at most the garment in progress.
 const completeAll = async (
-  garments: readonly MaybeProcessedGarment[],
-  onProgress: (done: number) => void,
+  stored: readonly StoredGarment[],
+  onProgress: (done: number, total: number) => void,
 ): Promise<Garment[]> => {
+  const total = stored.filter((g) => !isUpToDate(g)).length;
+  let done = 0;
   const completed: Garment[] = [];
-  for (const g of garments) {
-    completed.push(await completeGarment(g));
-    onProgress(completed.length);
+  for (const g of stored) {
+    if (isUpToDate(g)) {
+      completed.push(g);
+      continue;
+    }
+    onProgress(done, total);
+    const garment = await completeGarment(g);
+    await saveGarment(garment);
+    completed.push(garment);
+    done += 1;
   }
   return completed;
 };
@@ -93,13 +102,13 @@ export const Wardrobe = () => {
 
   const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
 
-  const process = async (stored: readonly MaybeProcessedGarment[]): Promise<Garment[]> => {
-    const missing = stored.filter((g) => !isProcessed(g)).length;
-    if (missing === 0) return completeAll(stored, () => {});
-    setBusy(`Käsitellään vaatteita 0 / ${missing}…`);
-    const done = await completeAll(stored, (n) => setBusy(`Käsitellään vaatteita ${n} / ${stored.length}…`));
+  const process = async (stored: readonly StoredGarment[]): Promise<void> => {
+    setGarments(stored.filter(isUpToDate));
+    const complete = await completeAll(stored, (done, total) =>
+      setBusy(`Käsitellään kuvia ${done + 1} / ${total}…`),
+    );
     setBusy(undefined);
-    return done;
+    setGarments(complete);
   };
 
   useEffect(() => {
@@ -107,10 +116,11 @@ export const Wardrobe = () => {
     loadStarted.current = true;
     void (async () => {
       try {
-        const stored = await loadGarments();
-        const complete = await process(stored);
-        if (!stored.every(isProcessed)) await replaceGarments(complete);
-        setGarments(complete);
+        const { garments: stored, unreadable } = await loadGarments();
+        if (unreadable > 0) {
+          setError(`${unreadable} vaatetta ei voitu lukea. Ne on jätetty tallennukseen koskemattomina.`);
+        }
+        await process(stored);
       } catch (e) {
         showError(e);
       }
@@ -123,7 +133,7 @@ export const Wardrobe = () => {
     try {
       for (const [i, file] of [...files].entries()) {
         setBusy(`Tunnistetaan kuvaa ${i + 1} / ${files.length}…`);
-        const draft = await draftFromPhoto(await downscale(file), examples);
+        const draft = await draftFromPhoto(file, examples);
         setQueue((q) => [...q, draft]);
       }
     } catch (e) {
@@ -144,11 +154,11 @@ export const Wardrobe = () => {
     if (!file) return;
     try {
       const backup = await importWardrobe(await file.text());
-      const complete = await process(backup.garments);
+      // Stored before any processing, so the imported input is safe even if models fail.
+      await replaceGarments(backup.garments);
       if (backup.profile) await saveProfile(backup.profile);
-      await replaceGarments(complete);
-      setGarments(complete);
       setError(undefined);
+      await process(backup.garments);
     } catch (e) {
       setBusy(undefined);
       showError(e);
