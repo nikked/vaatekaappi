@@ -4,6 +4,7 @@ import { rgbCss } from "./GarmentForm";
 import type { Garment, Occasion, Slot } from "./garment";
 import { Icon } from "./Icon";
 import {
+  type Cycling,
   fitsFilter,
   type OutfitFilter,
   rankOutfits,
@@ -20,6 +21,11 @@ import { useObjectUrl } from "./useObjectUrl";
 const OCCASIONS: readonly [Occasion, string][] = [
   ["everyday", "Arki"],
   ["party", "Juhla"],
+];
+const CYCLING: readonly [Cycling, string][] = [
+  ["any", "Kaikki"],
+  ["bikeable", "Pyöräilyyn"],
+  ["unbikeable", "Ei pyöräilyyn"],
 ];
 const SLOT_ORDER: readonly Slot[] = ["outer", "top", "dress", "bottom"];
 const SLOT_LABELS: Record<Slot, string> = {
@@ -137,7 +143,7 @@ export const Outfits = () => {
   const [garments, setGarments] = useState<Garment[]>([]);
   const [filter, setFilter] = useState<OutfitFilter>({
     occasion: "everyday",
-    cycling: false,
+    cycling: "any",
   });
   const [editing, setEditing] = useState<Editing>();
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
@@ -205,16 +211,22 @@ export const Outfits = () => {
           </div>
         </div>
         <div className="picker">
-          <button
-            type="button"
-            className="switch"
-            aria-pressed={filter.cycling}
-            onClick={() => update({ cycling: !filter.cycling })}
-          >
+          <span className="picker-label">
             <Icon name="bike" />
             Pyöräily
-            <span className="track" />
-          </button>
+          </span>
+          <div className="segmented">
+            {CYCLING.map(([value, label]) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={filter.cycling === value}
+                onClick={() => update({ cycling: value })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

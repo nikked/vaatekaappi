@@ -17,9 +17,12 @@ export type Outfit = {
   score: number;
 };
 
+// "unbikeable" lists the outfits to avoid on a bike day, not just fewer of them.
+export type Cycling = "any" | "bikeable" | "unbikeable";
+
 export type OutfitFilter = {
   occasion: Occasion;
-  cycling: boolean;
+  cycling: Cycling;
 };
 
 type Lch = readonly [number, number, number];
@@ -67,10 +70,18 @@ export const generateOutfits = (garments: readonly Garment[]): Garment[][] =>
 
 export const fitsFilter = (
   garment: Garment,
-  { occasion, cycling }: OutfitFilter,
-): boolean =>
-  garment.occasions.includes(occasion) &&
-  (!cycling || slotOf(garment) !== "bottom" || garment.bikeable);
+  { occasion }: OutfitFilter,
+): boolean => garment.occasions.includes(occasion);
+
+// The bottom or the dress decides; tops and layers don't get in the way of a bike.
+export const isBikeable = (outfit: readonly Garment[]): boolean =>
+  outfit.every((g) => {
+    const slot = slotOf(g);
+    return (slot !== "bottom" && slot !== "dress") || g.bikeable;
+  });
+
+const fitsCycling = (outfit: readonly Garment[], cycling: Cycling): boolean =>
+  cycling === "any" || (cycling === "bikeable") === isBikeable(outfit);
 
 export const hasAtMostOnePattern = (outfit: readonly Garment[]): boolean =>
   outfit.filter((g) => g.pattern !== "solid").length <= 1;
@@ -156,6 +167,7 @@ export const rankOutfits = (
 ): Outfit[] =>
   generateOutfits(garments.filter((g) => fitsFilter(g, filter)))
     .filter(hasAtMostOnePattern)
+    .filter((outfit) => fitsCycling(outfit, filter.cycling))
     .map((outfit) => ({
       garmentIds: outfit.map((g) => g.id),
       score: scoreOutfit(outfit, palette),
