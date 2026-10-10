@@ -1,15 +1,15 @@
 # Backlog
 
-## Test on Firefox
+## Firefox: still to check by hand
 
-She uses Firefox (no Chromium browser), and it seems to work, but nothing has
-been tested there systematically. Check on macOS Firefox:
+She uses Firefox, where recognition runs fast for her (WebGPU). Checked with
+Playwright's Firefox (156, headless, WebGPU blocklisted, so on WASM): models
+ready in ~30 s, ~10 s per photo, drag and drop, review and zip export/import
+all work. Still to check in her real Firefox:
 
-- Whether WebGPU is available. Without it background removal runs on WASM, about
-  8 s per photo instead of 0.3 s.
-- The "store data persistently?" prompt from `navigator.storage.persist()`.
-- Dragging photos from Finder and from the Photos app.
-- Zip backup export and import.
+- The "store data persistently?" prompt from `navigator.storage.persist()`
+  (automation never shows it).
+- Dragging from the Photos app (reported working by hand).
 
 ## iPhone
 
