@@ -1,8 +1,10 @@
 -include .env
 
 # Reinstalls only when the lockfile changes, so every target can depend on it.
+# Install scripts are skipped: npm 11 skips them locally anyway, and the only one
+# (onnxruntime-node fetching a binary) made CI fail on network timeouts.
 node_modules: package-lock.json
-	@npm ci
+	@npm ci --ignore-scripts
 	@touch node_modules
 
 .PHONY: install
