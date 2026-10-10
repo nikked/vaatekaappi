@@ -18,13 +18,13 @@ import {
 } from "./outfit";
 import { WARM_AUTUMN } from "./palette";
 
-const TEE: Category = "Yläosa > Lyhythihaiset > T-paidat";
-const KNIT: Category = "Yläosa > Pitkähihaiset > Neulepaidat";
-const TROUSERS: Category = "Alaosa > Housut";
-const SKIRT: Category = "Alaosa > Hameet > Pitkät hameet";
-const DRESS: Category = "Mekot";
-const COAT: Category = "Takit";
-const SNEAKERS: Category = "Kengät > Lenkkarit";
+const TEE: Category = "top-short-tee";
+const KNIT: Category = "top-long-knit";
+const TROUSERS: Category = "bottom-trousers";
+const SKIRT: Category = "bottom-skirt-long";
+const DRESS: Category = "dress";
+const COAT: Category = "coat";
+const SNEAKERS: Category = "shoes-sneakers";
 
 // LCh hues noted for the colors the tests rely on.
 const RUST: Rgb = [183, 65, 14]; // h 48
@@ -46,12 +46,17 @@ const garment = (
   color: Rgb | null = GREY,
   overrides: Partial<Garment> = {},
 ): Garment => ({
+  schema: 2,
   id,
   name: id,
   description: "",
+  brand: "",
+  material: "",
+  notes: "",
   image: new Blob(),
   cutout: new Blob(),
   embedding: [],
+  derivedBy: "test",
   category,
   colors: color ? [color] : [],
   pattern: "solid",
@@ -93,7 +98,7 @@ describe("generateOutfits", () => {
   });
 
   it("never uses a blazer as the only top: it needs a shirt under it", () => {
-    const wardrobe = [garment("bl", "Päällysosat > Bleiserit"), garment("b", TROUSERS)];
+    const wardrobe = [garment("bl", "layer-blazer"), garment("b", TROUSERS)];
     expect(generateOutfits(wardrobe)).toEqual([]);
     expect(ids(generateOutfits([...wardrobe, garment("t", TEE)]))).toEqual([
       ["b", "t"],

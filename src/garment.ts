@@ -1,52 +1,61 @@
 export type Slot = "top" | "bottom" | "dress" | "outer";
 
-// Leaf categories of the user's tree. `null` = stored but not used in outfits yet.
+// Ids are stored and never change; the Finnish path is only a label, so the
+// tree can be renamed or reorganised without touching saved garments.
+// `slot: null` = stored but not used in outfits yet.
 export const CATEGORIES = {
-  "Yläosa > Pitkähihaiset > Kauluspaidat": "top",
-  "Yläosa > Pitkähihaiset > Neulepaidat": "top",
-  "Yläosa > Lyhythihaiset > Kauluspaidat": "top",
-  "Yläosa > Lyhythihaiset > T-paidat": "top",
-  "Alaosa > Housut": "bottom",
-  "Alaosa > Hameet > Pitkät hameet": "bottom",
-  "Alaosa > Hameet > Lyhyet hameet": "bottom",
-  "Alaosa > Shortsit": "bottom",
-  Mekot: "dress",
+  "top-long-shirt": { path: ["Yläosa", "Pitkähihaiset", "Kauluspaidat"], slot: "top" },
+  "top-long-knit": { path: ["Yläosa", "Pitkähihaiset", "Neulepaidat"], slot: "top" },
+  "top-short-shirt": { path: ["Yläosa", "Lyhythihaiset", "Kauluspaidat"], slot: "top" },
+  "top-short-tee": { path: ["Yläosa", "Lyhythihaiset", "T-paidat"], slot: "top" },
+  "bottom-trousers": { path: ["Alaosa", "Housut"], slot: "bottom" },
+  "bottom-skirt-long": { path: ["Alaosa", "Hameet", "Pitkät hameet"], slot: "bottom" },
+  "bottom-skirt-short": { path: ["Alaosa", "Hameet", "Lyhyet hameet"], slot: "bottom" },
+  "bottom-shorts": { path: ["Alaosa", "Shortsit"], slot: "bottom" },
+  dress: { path: ["Mekot"], slot: "dress" },
   // Päällysosat are worn over a top, never alone; an outfit has one of them or a coat.
-  "Päällysosat > Sisätakit": "outer",
-  "Päällysosat > Bleiserit": "outer",
-  "Päällysosat > Neuletakit": "outer",
-  Takit: "outer",
-  Sukat: null,
-  "Kengät > Sandaalit": null,
-  "Kengät > Lenkkarit": null,
-  "Kengät > Korkkarit": null,
-  "Päähineet > Lippikset": null,
-  Korut: null,
-  Asusteet: null,
-  Alusvaatteet: null,
-} as const satisfies Record<string, Slot | null>;
+  "layer-overshirt": { path: ["Päällysosat", "Sisätakit"], slot: "outer" },
+  "layer-blazer": { path: ["Päällysosat", "Bleiserit"], slot: "outer" },
+  "layer-cardigan": { path: ["Päällysosat", "Neuletakit"], slot: "outer" },
+  coat: { path: ["Takit"], slot: "outer" },
+  socks: { path: ["Sukat"], slot: null },
+  "shoes-sandals": { path: ["Kengät", "Sandaalit"], slot: null },
+  "shoes-sneakers": { path: ["Kengät", "Lenkkarit"], slot: null },
+  "shoes-heels": { path: ["Kengät", "Korkkarit"], slot: null },
+  "hat-cap": { path: ["Päähineet", "Lippikset"], slot: null },
+  jewelry: { path: ["Korut"], slot: null },
+  accessories: { path: ["Asusteet"], slot: null },
+  underwear: { path: ["Alusvaatteet"], slot: null },
+} as const satisfies Record<string, { path: readonly string[]; slot: Slot | null }>;
 
-export const DEFAULT_CATEGORY: keyof typeof CATEGORIES = "Yläosa > Lyhythihaiset > T-paidat";
+export type Category = keyof typeof CATEGORIES;
+
+export const DEFAULT_CATEGORY: Category = "top-short-tee";
 
 export const PATTERNS = ["solid", "patterned"] as const;
 export const OCCASIONS = ["everyday", "party"] as const;
 // How warm the garment is to wear, not its color temperature.
 export const WARMTHS = ["warm", "cool"] as const;
 
-export type Category = keyof typeof CATEGORIES;
 export type Pattern = (typeof PATTERNS)[number];
 export type Occasion = (typeof OCCASIONS)[number];
 export type Warmth = (typeof WARMTHS)[number];
 
 export type Rgb = readonly [number, number, number];
 
-export type Garment = {
+// Bumped whenever the stored shape changes; migrate.ts upgrades older records.
+export const GARMENT_SCHEMA = 2;
+
+// What the user entered: kept forever and migrated on every schema change.
+export type GarmentInput = {
+  schema: typeof GARMENT_SCHEMA;
   id: string;
+  image: Blob; // original photo, max 2048 px
   name: string;
   description: string;
-  image: Blob;
-  cutout: Blob; // PNG with the background removed
-  embedding: number[]; // SigLIP image embedding of the cut-out, normalized
+  brand: string;
+  material: string;
+  notes: string; // fit and style
   category: Category;
   colors: Rgb[];
   pattern: Pattern;
@@ -56,25 +65,22 @@ export type Garment = {
   favourite: boolean;
 };
 
-// As stored or imported before the models have added the cut-out and embedding.
-export type MaybeProcessedGarment = Omit<Garment, "cutout" | "embedding"> &
-  Partial<Pick<Garment, "cutout" | "embedding">>;
-
-// Old paths of categories that have moved, for garments saved or exported before.
-const MOVED_CATEGORIES: Readonly<Record<string, Category>> = {
-  "Takit > Sisätakit": "Päällysosat > Sisätakit",
-  "Yläosa > Pitkähihaiset > Bleiserit": "Päällysosat > Bleiserit",
-  "Yläosa > Pitkähihaiset > Neuletakit": "Päällysosat > Neuletakit",
+// Computed from the photo; recomputed whenever `derivedBy` differs from the current models.
+export type Derived = {
+  cutout: Blob; // PNG with the background removed, cropped to the garment
+  embedding: number[]; // image embedding of the uncropped cut-out, normalized
+  derivedBy: string;
 };
 
-export const currentCategory = (value: unknown): unknown =>
-  typeof value === "string" ? (MOVED_CATEGORIES[value] ?? value) : value;
-
-export const isProcessed = (g: MaybeProcessedGarment): g is Garment =>
-  g.cutout !== undefined && g.embedding !== undefined;
+export type StoredGarment = GarmentInput & Partial<Derived>;
+export type Garment = GarmentInput & Derived;
 
 export const isCategory = (value: unknown): value is Category =>
   typeof value === "string" && Object.hasOwn(CATEGORIES, value);
+
+export const categoryLabel = (category: Category): string => CATEGORIES[category].path.join(" › ");
+export const categoryLeaf = (category: Category): string => CATEGORIES[category].path.at(-1) ?? category;
+export const categoryGroup = (category: Category): string => CATEGORIES[category].path[0];
 
 export const isOneOf =
   <T extends string>(values: readonly T[]) =>

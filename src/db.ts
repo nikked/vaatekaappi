@@ -1,4 +1,5 @@
-import { currentCategory, isCategory, type Garment, type MaybeProcessedGarment } from "./garment";
+import type { StoredGarment } from "./garment";
+import { migrateGarment } from "./migrate";
 import { DEFAULT_PROFILE, isProfile, type Profile } from "./palette";
 
 const GARMENTS = "garments";
@@ -35,15 +36,24 @@ const run = async <T>(
   });
 };
 
-// Migrated on every read rather than rewritten in place: cheap, and the new
-// path is stored the next time the garment is saved.
-export const loadGarments = async (): Promise<MaybeProcessedGarment[]> =>
-  ((await run<MaybeProcessedGarment[]>(GARMENTS, "readonly", (store) => store.getAll())) ?? []).map((g) => {
-    const category = currentCategory(g.category);
-    return isCategory(category) ? { ...g, category } : g;
-  });
+export type Loaded = { garments: StoredGarment[]; unreadable: number };
 
-export const saveGarment = async (garment: Garment): Promise<void> => {
+// Migrated on every read instead of in a database upgrade: one pure function
+// serves the database and backups alike. Records that can't be read are left
+// in the database untouched rather than dropped.
+export const loadGarments = async (): Promise<Loaded> => {
+  const raw = (await run<unknown[]>(GARMENTS, "readonly", (store) => store.getAll())) ?? [];
+  const garments = raw.flatMap((r) => {
+    try {
+      return [migrateGarment(r)];
+    } catch {
+      return [];
+    }
+  });
+  return { garments, unreadable: raw.length - garments.length };
+};
+
+export const saveGarment = async (garment: StoredGarment): Promise<void> => {
   await run(GARMENTS, "readwrite", (store) => store.put(garment));
 };
 
@@ -52,7 +62,7 @@ export const deleteGarment = async (id: string): Promise<void> => {
 };
 
 // Single transaction: either the whole import lands or nothing changes.
-export const replaceGarments = async (garments: readonly Garment[]): Promise<void> => {
+export const replaceGarments = async (garments: readonly StoredGarment[]): Promise<void> => {
   await run(GARMENTS, "readwrite", (store) => {
     store.clear();
     for (const g of garments) store.put(g);
@@ -67,3 +77,7 @@ export const loadProfile = async (): Promise<Profile> => {
 export const saveProfile = async (profile: Profile): Promise<void> => {
   await run(SETTINGS, "readwrite", (store) => store.put(profile, PROFILE_KEY));
 };
+
+// Without this the browser may clear the wardrobe when the disk runs low.
+export const requestPersistentStorage = async (): Promise<boolean> =>
+  (await navigator.storage?.persist?.()) ?? false;

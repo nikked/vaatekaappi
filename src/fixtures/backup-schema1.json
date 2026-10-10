@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "profile": { "season": "warm-autumn", "palette": [[183, 65, 14], [0, 128, 128]] },
+  "garments": [
+    {
+      "id": "4364",
+      "name": "Marseille hame",
+      "description": "Kiva hame arkeen ja juhlaan",
+      "image": "data:image/jpeg;base64,/9j/AQID",
+      "cutout": "data:image/png;base64,iVBORw0K",
+      "embedding": [0.6, 0.8],
+      "category": "Alaosa > Hameet > Pitkät hameet",
+      "colors": [[255, 153, 0], [8, 145, 145]],
+      "pattern": "patterned",
+      "occasions": ["everyday", "party"],
+      "bikeable": true,
+      "favourite": true
+    },
+    {
+      "id": "4361",
+      "name": "Vihreä bleiseri",
+      "description": "Sisätakki arkeen ja juhlaan vihreä ja formaalimpi",
+      "image": "data:image/jpeg;base64,/9j/BAUG",
+      "category": "Takit > Sisätakit",
+      "colors": [[31, 173, 138]],
+      "pattern": "solid",
+      "occasions": ["everyday"],
+      "warmth": "cool",
+      "bikeable": false,
+      "favourite": false
+    }
+  ]
+}

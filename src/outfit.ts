@@ -39,7 +39,7 @@ export const EXTRA_HUE_PENALTY = 1;
 // the palette (clearly off-palette) costs as much as one full clash.
 export const PALETTE_WEIGHT = 1 / 20;
 
-export const slotOf = (garment: Garment): Slot | null => CATEGORIES[garment.category];
+export const slotOf = (garment: Garment): Slot | null => CATEGORIES[garment.category].slot;
 
 const cartesian = <T>(choices: readonly (readonly T[])[]): T[][] =>
   choices.reduce<T[][]>(
