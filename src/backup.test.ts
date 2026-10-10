@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { exportWardrobe, importWardrobe } from "./backup";
+import { DEFAULT_PROFILE, profileFor } from "./palette";
 import type { Garment } from "./garment";
 
 const garment = (id: string, bytes: number[]): Garment => ({
@@ -21,7 +22,7 @@ const garment = (id: string, bytes: number[]): Garment => ({
 describe("export → import", () => {
   it("round-trips garments including image and cut-out bytes", async () => {
     const original = [garment("a", [0, 1, 2, 255]), garment("b", [137, 80, 78, 71])];
-    const restored = await importWardrobe(await exportWardrobe(original));
+    const { garments: restored } = await importWardrobe(await exportWardrobe(original, DEFAULT_PROFILE));
 
     expect(restored.map(({ image: _, cutout: __, ...rest }) => rest)).toEqual(
       original.map(({ image: _, cutout: __, ...rest }) => rest),
@@ -42,7 +43,11 @@ describe("importWardrobe", () => {
       version: 1,
       garments: [{ ...garment("a", [1]), image: "data:image/jpeg;base64,AQ==", cutout: undefined, embedding: undefined }],
     });
-    const [restored] = await importWardrobe(json);
+    const {
+      garments: [restored],
+      profile,
+    } = await importWardrobe(json);
+    expect(profile).toBeUndefined();
     expect(restored?.cutout).toBeUndefined();
     expect(restored?.embedding).toBeUndefined();
   });
@@ -52,13 +57,26 @@ describe("importWardrobe", () => {
   });
 
   it("moves garments exported under an old category path", async () => {
-    const json = await exportWardrobe([{ ...garment("a", [1]), category: "Päällysosat > Bleiserit" }]);
-    const [restored] = await importWardrobe(json.replace("Päällysosat > Bleiserit", "Yläosa > Pitkähihaiset > Bleiserit"));
+    const json = await exportWardrobe([{ ...garment("a", [1]), category: "Päällysosat > Bleiserit" }], DEFAULT_PROFILE);
+    const {
+      garments: [restored],
+    } = await importWardrobe(json.replace("Päällysosat > Bleiserit", "Yläosa > Pitkähihaiset > Bleiserit"));
     expect(restored?.category).toBe("Päällysosat > Bleiserit");
   });
 
+  it("round-trips an edited color profile", async () => {
+    const profile = { ...profileFor("soft-summer"), palette: [[1, 2, 3] as const] };
+    const restored = await importWardrobe(await exportWardrobe([], profile));
+    expect(restored.profile).toEqual({ season: "soft-summer", palette: [[1, 2, 3]] });
+  });
+
+  it("rejects an invalid color profile", async () => {
+    const json = JSON.stringify({ version: 1, garments: [], profile: { season: "monsoon", palette: [] } });
+    await expect(importWardrobe(json)).rejects.toThrow("Invalid color profile");
+  });
+
   it("rejects a garment with an unknown category", async () => {
-    const json = await exportWardrobe([garment("a", [1])]);
+    const json = await exportWardrobe([garment("a", [1])], DEFAULT_PROFILE);
     await expect(importWardrobe(json.replace("Neulepaidat", "Avaruuspuvut"))).rejects.toThrow(
       "Invalid garment at index 0",
     );

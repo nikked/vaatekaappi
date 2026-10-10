@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { exportWardrobe, importWardrobe } from "./backup";
-import { deleteGarment, loadGarments, replaceGarments, saveGarment } from "./db";
+import { deleteGarment, loadGarments, loadProfile, replaceGarments, saveGarment, saveProfile } from "./db";
 import { GarmentForm, leafName, rgbCss, tintStyle } from "./GarmentForm";
 import { Icon } from "./Icon";
 import { downscale } from "./image";
@@ -143,7 +143,9 @@ export const Wardrobe = () => {
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const complete = await process(await importWardrobe(await file.text()));
+      const backup = await importWardrobe(await file.text());
+      const complete = await process(backup.garments);
+      if (backup.profile) await saveProfile(backup.profile);
       await replaceGarments(complete);
       setGarments(complete);
       setError(undefined);
@@ -244,18 +246,18 @@ export const Wardrobe = () => {
               disabled={garments.length === 0}
               onClick={async (e) => {
                 closeMenu(e.currentTarget);
-                download("vaatekaappi.json", await exportWardrobe(garments));
+                download("vaatekaappi.json", await exportWardrobe(garments, await loadProfile()));
               }}
             >
               <Icon name="down" />
               <span>
-                Vie varmuuskopio<small>Kaikki vaatteet yhteen tiedostoon</small>
+                Vie varmuuskopio<small>Vaatteet ja värisi yhteen tiedostoon</small>
               </span>
             </button>
             <label>
               <Icon name="up" />
               <span>
-                Tuo varmuuskopio<small>Korvaa nykyisen vaatekaapin</small>
+                Tuo varmuuskopio<small>Korvaa nykyisen vaatekaapin ja värit</small>
               </span>
               <input
                 type="file"

@@ -17,14 +17,14 @@ photo-based try-on, profile photos.
 | ----------- | ------------------------------------------------------------------- |
 | Platform    | Browser: Vite + React + TypeScript, data in IndexedDB, no backend   |
 | Users       | One person, one wardrobe, one profile                               |
-| Screens     | Wardrobe, Outfits                                                   |
+| Screens     | Vaatekaappi, Asut, Värini                                           |
 | Language    | UI in Finnish, code in English                                      |
 | Photos      | JPEG/PNG only (iPhone "Most Compatible"). Backgrounds not plain     |
 | Examples    | One-time manual conversion of `vaatteet.json` → `examples.json`     |
 | Prefill     | Category (zero-shot + examples), colors (suggested, user confirms)  |
 | Add flow    | Small batch first, then one at a time; same fast prefill for both   |
 | Outfits     | Fixed templates, hard filters, palette + color-theory ranking       |
-| Palette     | Warm autumn, fixed palette constant                                 |
+| Palette     | Season type (12) + editable palette in the Värini tab; warm autumn default |
 | Dress me    | v1: flat-lay collage. Photo try-on decided after spike, not in v1   |
 | Embeddings  | `Xenova/siglip-base-patch16-224` q8 via transformers.js (WebGPU)    |
 | Cut-outs    | `briaai/RMBG-1.4`: WebGPU fp16, WASM q8 fallback (personal use only) |
@@ -105,6 +105,11 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
   gets a "Sopii sinulle" badge. No explanation text.
 - Pick an outfit, or swap single garments → dress me: collage of garment images
   laid out by slot.
+
+### Värini
+- Pick one of the 12 season types; its preset palette (an approximation)
+  replaces the current one. Edit, add and remove palette colors, or reset.
+- Saved immediately, included in backups, and used for the palette-fit score.
 
 ## Steps
 

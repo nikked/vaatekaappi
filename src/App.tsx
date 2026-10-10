@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ColorProfile } from "./ColorProfile";
 import { Icon, type IconName } from "./Icon";
 import { warmUp } from "./models";
 import { Outfits } from "./Outfits";
@@ -7,6 +8,7 @@ import { Wardrobe } from "./Wardrobe";
 const SCREENS = [
   ["Vaatekaappi", "hanger"],
   ["Asut", "sparkle"],
+  ["Värini", "palette"],
 ] as const satisfies readonly (readonly [string, IconName])[];
 type Screen = (typeof SCREENS)[number][0];
 
@@ -39,7 +41,11 @@ export const App = () => {
           ))}
         </nav>
       </header>
-      <main>{screen === "Vaatekaappi" ? <Wardrobe /> : <Outfits />}</main>
+      <main>
+        {screen === "Vaatekaappi" && <Wardrobe />}
+        {screen === "Asut" && <Outfits />}
+        {screen === "Värini" && <ColorProfile />}
+      </main>
     </div>
   );
 };

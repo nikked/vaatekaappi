@@ -283,7 +283,7 @@ describe("rankOutfits", () => {
       garment("green-top", TEE, GREEN),
       garment("orange-skirt", SKIRT, ORANGE),
     ];
-    const ranked = rankOutfits(wardrobe, everydayCool);
+    const ranked = rankOutfits(wardrobe, everydayCool, WARM_AUTUMN);
     expect(ranked.map((o) => o.garmentIds)).toEqual([
       ["rust-top", "orange-skirt"],
       ["green-top", "orange-skirt"],
@@ -297,7 +297,7 @@ describe("rankOutfits", () => {
       garment("black-trousers", TROUSERS, BLACK),
       garment("rust-coat", COAT, RUST),
     ];
-    const [first, second] = rankOutfits(wardrobe, everydayCool);
+    const [first, second] = rankOutfits(wardrobe, everydayCool, WARM_AUTUMN);
     expect(first!.score).toBeCloseTo(second!.score, 1);
   });
 
@@ -308,7 +308,7 @@ describe("rankOutfits", () => {
       garment("airy-top", TEE, GREY, { warmth: "cool" }),
       garment("bottom", TROUSERS),
     ];
-    expect(rankOutfits(wardrobe, everydayCool).map((o) => o.garmentIds)).toEqual([["top", "bottom"]]);
+    expect(rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds)).toEqual([["top", "bottom"]]);
   });
 
   it("drops outfits with more than one pattern", () => {
@@ -317,13 +317,20 @@ describe("rankOutfits", () => {
       garment("patterned-skirt", SKIRT, GREY, { pattern: "patterned" }),
       garment("plain-skirt", SKIRT),
     ];
-    expect(rankOutfits(wardrobe, everydayCool).map((o) => o.garmentIds)).toEqual([
+    expect(rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds)).toEqual([
       ["patterned-top", "plain-skirt"],
     ]);
   });
 
+  it("ranks by the palette it is given", () => {
+    const wardrobe = [garment("rust-top", TEE, RUST), garment("cobalt-top", TEE, COBALT), garment("b", TROUSERS, BLACK)];
+    const first = (palette: readonly Rgb[]) => rankOutfits(wardrobe, everydayCool, palette)[0]?.garmentIds[0];
+    expect(first(WARM_AUTUMN)).toBe("rust-top");
+    expect(first([COBALT, BLACK])).toBe("cobalt-top");
+  });
+
   it("returns nothing for an empty wardrobe", () => {
-    expect(rankOutfits([], everydayCool)).toEqual([]);
+    expect(rankOutfits([], everydayCool, WARM_AUTUMN)).toEqual([]);
   });
 });
 

@@ -1,6 +1,5 @@
 import { deltaE, rgbToLab, type Lab } from "./color";
 import { CATEGORIES, type Garment, type Occasion, type Rgb, type Slot, type Warmth } from "./garment";
-import { WARM_AUTUMN } from "./palette";
 
 type OutfitTemplate = {
   required: readonly Slot[];
@@ -125,12 +124,16 @@ export const colorHarmony = (outfit: readonly Garment[]): number => {
 export const scoreOutfit = (outfit: readonly Garment[], palette: readonly Rgb[]): number =>
   colorHarmony(outfit) - PALETTE_WEIGHT * paletteDistance(outfit, palette);
 
-export const rankOutfits = (garments: readonly Garment[], filter: OutfitFilter): Outfit[] =>
+export const rankOutfits = (
+  garments: readonly Garment[],
+  filter: OutfitFilter,
+  palette: readonly Rgb[],
+): Outfit[] =>
   generateOutfits(garments.filter((g) => fitsFilter(g, filter)))
     .filter(hasAtMostOnePattern)
     .map((outfit) => ({
       garmentIds: outfit.map((g) => g.id),
-      score: scoreOutfit(outfit, WARM_AUTUMN),
+      score: scoreOutfit(outfit, palette),
     }))
     .sort((a, b) => b.score - a.score);
 
