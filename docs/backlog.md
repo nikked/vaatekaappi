@@ -10,3 +10,9 @@ been tested there systematically. Check on macOS Firefox:
 - The "store data persistently?" prompt from `navigator.storage.persist()`.
 - Dragging photos from Finder and from the Photos app.
 - Zip backup export and import.
+
+## iPhone
+
+Not a target for now; the app is used on a laptop. Later: check the phone
+layout end to end, Safari on iOS, adding photos from the camera roll, and
+whether the ~300 MB model download is acceptable on a phone.
