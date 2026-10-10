@@ -133,6 +133,7 @@ export const GarmentForm = ({
           <div className="field-label">Nimi</div>
           <input
             className="text-input"
+            // biome-ignore lint/a11y/noAutofocus: reviewing many photos in a row, typing the name first is the fast path
             autoFocus
             value={draft.name}
             placeholder="esim. Liila neulepaita"
@@ -200,6 +201,7 @@ export const GarmentForm = ({
           <div className="swatches">
             {draft.colors.map((c, i) => (
               <label
+                // biome-ignore lint/suspicious/noArrayIndexKey: a garment can have the same color twice
                 key={i}
                 className="swatch"
                 style={{ background: rgbCss(c) }}

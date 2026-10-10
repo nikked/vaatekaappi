@@ -126,7 +126,8 @@ const distinctHueCount = (hues: readonly number[]): number =>
     (groups, hue) =>
       groups.some((g) => hueDistance(g, hue) <= ANALOGOUS_MAX_DEGREES)
         ? groups
-        : [...groups, hue],
+        : // biome-ignore lint/performance/noAccumulatingSpread: an outfit has at most four hues; kept immutable
+          [...groups, hue],
     [],
   ).length;
 

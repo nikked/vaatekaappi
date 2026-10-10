@@ -63,30 +63,34 @@ const Card = ({
   onOpen: () => void;
   onToggleFavourite: () => void;
 }) => (
-  <article className="card" onClick={onOpen}>
-    <div className="photo" style={tintStyle(garment.colors)}>
-      <img src={useObjectUrl(garment.cutout)} alt={garment.name} />
-      <button
-        className="heart"
-        aria-pressed={garment.favourite}
-        title="Lempivaate"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavourite();
-        }}
-      >
-        <Icon name={garment.favourite ? "heart-fill" : "heart"} />
-      </button>
-    </div>
-    <div className="card-meta">
-      <span className="name">{garment.name || "Nimetön"}</span>
-      <span className="dots">
-        {garment.colors.map((c, i) => (
-          <span key={i} className="dot" style={{ background: rgbCss(c) }} />
-        ))}
-      </span>
-    </div>
-    <p className="card-sub">{categoryLeaf(garment.category)}</p>
+  <article className="card">
+    <button type="button" className="card-open" onClick={onOpen}>
+      <div className="photo" style={tintStyle(garment.colors)}>
+        <img src={useObjectUrl(garment.cutout)} alt={garment.name} />
+      </div>
+      <div className="card-meta">
+        <span className="name">{garment.name || "Nimetön"}</span>
+        <span className="dots">
+          {garment.colors.map((c, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: a garment can have the same color twice
+            <span key={i} className="dot" style={{ background: rgbCss(c) }} />
+          ))}
+        </span>
+      </div>
+      <p className="card-sub">{categoryLeaf(garment.category)}</p>
+    </button>
+    <button
+      type="button"
+      className="heart"
+      aria-pressed={garment.favourite}
+      title="Lempivaate"
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleFavourite();
+      }}
+    >
+      <Icon name={garment.favourite ? "heart-fill" : "heart"} />
+    </button>
   </article>
 );
 
@@ -135,6 +139,7 @@ export const Wardrobe = () => {
     setGarments(complete);
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loads once on mount; the ref guards StrictMode's second run
   useEffect(() => {
     if (loadStarted.current) return;
     loadStarted.current = true;
@@ -294,7 +299,11 @@ export const Wardrobe = () => {
       <>
         {dropOverlay}
         <div className="review-top">
-          <button className="btn btn-ghost" onClick={() => setReviewing(false)}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setReviewing(false)}
+          >
             <Icon name="back" />
             Vaatekaappi
           </button>
@@ -333,6 +342,7 @@ export const Wardrobe = () => {
         {dropOverlay}
         <div className="review-top">
           <button
+            type="button"
             className="btn btn-ghost"
             onClick={() => setEditing(undefined)}
           >
@@ -390,6 +400,7 @@ export const Wardrobe = () => {
           </summary>
           <div className="menu-panel">
             <button
+              type="button"
               disabled={garments.length === 0}
               onClick={async (e) => {
                 closeMenu(e.currentTarget);
@@ -457,7 +468,11 @@ export const Wardrobe = () => {
             </strong>{" "}
             odottaa tarkistusta.
           </p>
-          <button className="btn btn-soft" onClick={() => setReviewing(true)}>
+          <button
+            type="button"
+            className="btn btn-soft"
+            onClick={() => setReviewing(true)}
+          >
             Jatka tarkistusta
           </button>
         </div>
@@ -465,6 +480,7 @@ export const Wardrobe = () => {
 
       <div className="filters">
         <button
+          type="button"
           className="chip"
           aria-pressed={filter === "all"}
           onClick={() => setFilter("all")}
@@ -473,6 +489,7 @@ export const Wardrobe = () => {
         </button>
         {GROUPS.map(([label, group]) => (
           <button
+            type="button"
             key={group}
             className="chip"
             aria-pressed={filter === group}
@@ -485,6 +502,7 @@ export const Wardrobe = () => {
           </button>
         ))}
         <button
+          type="button"
           className="chip"
           aria-pressed={filter === "favourites"}
           onClick={() => setFilter("favourites")}

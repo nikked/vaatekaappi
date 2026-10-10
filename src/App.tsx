@@ -33,6 +33,7 @@ export const App = () => {
         <nav className="tabs">
           {SCREENS.map(([name, icon]) => (
             <button
+              type="button"
               key={name}
               className="tab"
               aria-current={name === screen ? "page" : undefined}

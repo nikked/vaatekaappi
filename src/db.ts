@@ -24,7 +24,7 @@ const open = (): Promise<IDBDatabase> =>
 const run = async <T>(
   storeName: string,
   mode: IDBTransactionMode,
-  action: (store: IDBObjectStore) => IDBRequest<T> | void,
+  action: (store: IDBObjectStore) => IDBRequest<T> | undefined,
 ): Promise<T | undefined> => {
   const db = await open();
   return new Promise((resolve, reject) => {
