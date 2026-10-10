@@ -1,13 +1,14 @@
 import { strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { exportBackup, importBackup, slug } from "./backup";
-import backupContainer2 from "./fixtures/backup-container2.zip.b64?raw";
 import backupSchema1 from "./fixtures/backup-schema1.json?raw";
+import backupSchema2 from "./fixtures/backup-schema2.zip.b64?raw";
+import backupSchema3 from "./fixtures/backup-schema3.zip.b64?raw";
 import type { Garment, StoredGarment } from "./garment";
 import { DEFAULT_PROFILE, profileFor } from "./palette";
 
 const garment = (id: string, bytes: number[]): Garment => ({
-  schema: 2,
+  schema: 3,
   id,
   image: new Blob([new Uint8Array(bytes)], { type: "image/jpeg" }),
   name: "Liila neulepaita",
@@ -20,7 +21,7 @@ const garment = (id: string, bytes: number[]): Garment => ({
   pattern: "solid",
   occasions: ["everyday", "party"],
   warmth: "warm",
-  bikeable: false,
+  noBiking: false,
   favourite: true,
   cutout: new Blob([new Uint8Array([...bytes, 9])], { type: "image/png" }),
   embedding: [0.6, 0.8],
@@ -30,6 +31,8 @@ const garment = (id: string, bytes: number[]): Garment => ({
 const bytes = async (blob: Blob | undefined) => [
   ...new Uint8Array((await blob?.arrayBuffer()) ?? new ArrayBuffer(0)),
 ];
+const fromBase64 = (text: string) =>
+  Uint8Array.from(atob(text.trim()), (c) => c.charCodeAt(0));
 const withoutBlobs = ({ image: _, cutout: __, ...rest }: StoredGarment) => rest;
 
 const roundTrip = async (
@@ -124,7 +127,7 @@ describe("importing a schema 1 backup", () => {
     });
     expect(garments.map(withoutBlobs)).toEqual([
       {
-        schema: 2,
+        schema: 3,
         id: "4364",
         name: "Marseille hame",
         description: "Kiva hame arkeen ja juhlaan",
@@ -138,11 +141,11 @@ describe("importing a schema 1 backup", () => {
         ],
         pattern: "patterned",
         occasions: ["everyday", "party"],
-        bikeable: true,
+        noBiking: false,
         favourite: true,
       },
       {
-        schema: 2,
+        schema: 3,
         id: "4361",
         name: "Vihreä bleiseri",
         description: "Sisätakki arkeen ja juhlaan vihreä ja formaalimpi",
@@ -154,7 +157,7 @@ describe("importing a schema 1 backup", () => {
         pattern: "solid",
         occasions: ["everyday"],
         warmth: "cool",
-        bikeable: false,
+        noBiking: false,
         favourite: false,
       },
     ]);
@@ -165,12 +168,9 @@ describe("importing a schema 1 backup", () => {
   });
 });
 
-describe("importing a container 2 (zip) backup", () => {
+describe("importing a schema 2 zip backup", () => {
   it("keeps everything the user entered", async () => {
-    const zip = Uint8Array.from(atob(backupContainer2.trim()), (c) =>
-      c.charCodeAt(0),
-    );
-    const { garments, profile } = await importBackup(zip);
+    const { garments, profile } = await importBackup(fromBase64(backupSchema2));
 
     expect(profile).toEqual({
       season: "warm-autumn",
@@ -178,7 +178,7 @@ describe("importing a container 2 (zip) backup", () => {
     });
     expect(garments.map(withoutBlobs)).toEqual([
       {
-        schema: 2,
+        schema: 3,
         id: "4351",
         name: "Liila neulepaita",
         description: "Lämmin pörröinen neulepaita",
@@ -190,13 +190,13 @@ describe("importing a container 2 (zip) backup", () => {
         pattern: "solid",
         occasions: ["everyday", "party"],
         warmth: "warm",
-        bikeable: false,
+        noBiking: false,
         favourite: true,
         embedding: [0.6, 0.8],
         derivedBy: "briaai/RMBG-1.4+Xenova/siglip-base-patch16-224+crop",
       },
       {
-        schema: 2,
+        schema: 3,
         id: "4364",
         name: "Marseille hame",
         description: "",
@@ -210,13 +210,39 @@ describe("importing a container 2 (zip) backup", () => {
         ],
         pattern: "patterned",
         occasions: ["everyday"],
-        bikeable: true,
+        noBiking: false,
         favourite: false,
       },
     ]);
     expect(await bytes(garments[0]?.image)).toEqual([0xff, 0xd8, 0xff, 7]);
     expect(await bytes(garments[0]?.cutout)).toEqual([0x89, 0x50, 0x4e, 0x47]);
     expect(garments[1]?.cutout).toBeUndefined();
+  });
+});
+
+describe("importing a schema 3 zip backup", () => {
+  it("keeps the ei pyöräily choice", async () => {
+    const { garments } = await importBackup(fromBase64(backupSchema3));
+    expect(garments.map(withoutBlobs)).toEqual([
+      {
+        schema: 3,
+        id: "4364",
+        name: "Marseille hame",
+        description: "Kiva hame arkeen ja juhlaan",
+        brand: "",
+        material: "viskoosi",
+        notes: "",
+        category: "bottom-skirt-long",
+        colors: [
+          [255, 153, 0],
+          [8, 145, 145],
+        ],
+        pattern: "patterned",
+        occasions: ["everyday", "party"],
+        noBiking: true,
+        favourite: true,
+      },
+    ]);
   });
 });
 

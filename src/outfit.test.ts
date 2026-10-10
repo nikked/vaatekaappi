@@ -47,7 +47,7 @@ const garment = (
   color: Rgb | null = GREY,
   overrides: Partial<Garment> = {},
 ): Garment => ({
-  schema: 2,
+  schema: 3,
   id,
   name: id,
   description: "",
@@ -62,7 +62,7 @@ const garment = (
   colors: color ? [color] : [],
   pattern: "solid",
   occasions: ["everyday"],
-  bikeable: false,
+  noBiking: false,
   favourite: false,
   ...overrides,
 });
@@ -149,14 +149,14 @@ describe("isBikeable", () => {
   it("depends on the bottom or dress, not on tops and layers", () => {
     const top = garment("t", TEE);
     const coat = garment("c", COAT);
+    expect(isBikeable([top, coat, garment("s", SKIRT)])).toBe(true);
     expect(
-      isBikeable([top, coat, garment("s", SKIRT, GREY, { bikeable: true })]),
-    ).toBe(true);
-    expect(isBikeable([top, garment("s", SKIRT)])).toBe(false);
-    expect(
-      isBikeable([garment("d", DRESS, GREY, { bikeable: true }), coat]),
-    ).toBe(true);
-    expect(isBikeable([garment("d", DRESS)])).toBe(false);
+      isBikeable([top, garment("s", SKIRT, GREY, { noBiking: true })]),
+    ).toBe(false);
+    expect(isBikeable([garment("d", DRESS), coat])).toBe(true);
+    expect(isBikeable([garment("d", DRESS, GREY, { noBiking: true })])).toBe(
+      false,
+    );
   });
 });
 
@@ -384,8 +384,8 @@ describe("rankOutfits", () => {
   it("shows only bikeable outfits, or only the ones that aren't", () => {
     const wardrobe = [
       garment("top", TEE),
-      garment("bike-skirt", SKIRT, GREY, { bikeable: true }),
-      garment("long-skirt", SKIRT),
+      garment("bike-skirt", SKIRT),
+      garment("long-skirt", SKIRT, GREY, { noBiking: true }),
     ];
     const bottoms = (cycling: OutfitFilter["cycling"]) =>
       rankOutfits(wardrobe, { ...everyday, cycling }, WARM_AUTUMN).map(

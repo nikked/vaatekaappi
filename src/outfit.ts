@@ -73,11 +73,11 @@ export const fitsFilter = (
   { occasion }: OutfitFilter,
 ): boolean => garment.occasions.includes(occasion);
 
-// The bottom or the dress decides; tops and layers don't get in the way of a bike.
+// The bottom or the dress decides; tops and layers don't stop a bike ride.
 export const isBikeable = (outfit: readonly Garment[]): boolean =>
   outfit.every((g) => {
     const slot = slotOf(g);
-    return (slot !== "bottom" && slot !== "dress") || g.bikeable;
+    return (slot !== "bottom" && slot !== "dress") || !g.noBiking;
   });
 
 const fitsCycling = (outfit: readonly Garment[], cycling: Cycling): boolean =>

@@ -64,6 +64,17 @@ const fromV1 = ({
   notes: "",
 });
 
+// Schema 2 had `bikeable`, true only for garments tagged as fine for biking.
+// Schema 3 flips the default: untagged means fine, so everything starts that way.
+const fromV2 = ({
+  bikeable: _,
+  ...v2
+}: Record<string, unknown>): Record<string, unknown> => ({
+  ...v2,
+  schema: 3,
+  noBiking: false,
+});
+
 const fail = (field: string): never => {
   throw new Error(`Invalid garment field: ${field}`);
 };
@@ -107,7 +118,7 @@ const parseCurrent = (r: Record<string, unknown>): StoredGarment => {
     ...(warmth === undefined
       ? {}
       : { warmth: isOneOf(WARMTHS)(warmth) ? warmth : fail("warmth") }),
-    bikeable: boolean(r, "bikeable"),
+    noBiking: boolean(r, "noBiking"),
     favourite: boolean(r, "favourite"),
     ...derived(r),
   };
@@ -116,7 +127,8 @@ const parseCurrent = (r: Record<string, unknown>): StoredGarment => {
 /** Any stored or exported garment, of any schema, in the current shape. Throws if it can't be read. */
 export const migrateGarment = (raw: unknown): StoredGarment => {
   if (!isRecord(raw)) return fail("garment");
-  if (raw.schema === undefined) return parseCurrent(fromV1(raw));
+  if (raw.schema === undefined) return parseCurrent(fromV2(fromV1(raw)));
+  if (raw.schema === 2) return parseCurrent(fromV2(raw));
   if (raw.schema === GARMENT_SCHEMA) return parseCurrent(raw);
   return fail("schema");
 };

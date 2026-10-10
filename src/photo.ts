@@ -76,7 +76,7 @@ export const draftFromPhoto = async (
       colors,
       pattern: suggestPattern(derived.embedding, patterns),
       occasions: [],
-      bikeable: false,
+      noBiking: false,
       favourite: false,
       ...derived,
     },

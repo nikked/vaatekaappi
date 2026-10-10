@@ -46,7 +46,7 @@ const v2 = {
 describe("migrateGarment from schema 1", () => {
   it("keeps everything the user entered and maps the category path to its id", () => {
     expect(migrateGarment(v1)).toEqual({
-      schema: 2,
+      schema: 3,
       id: "4364",
       image,
       name: "Marseille hame",
@@ -58,7 +58,7 @@ describe("migrateGarment from schema 1", () => {
       colors: v1.colors,
       pattern: "patterned",
       occasions: ["everyday", "party"],
-      bikeable: true,
+      noBiking: false,
       favourite: true,
     });
   });
@@ -83,26 +83,39 @@ describe("migrateGarment from schema 1", () => {
   });
 });
 
+const { bikeable: _, ...v2Rest } = v2;
+const v3 = { ...v2Rest, schema: 3, noBiking: false };
+
+describe("migrateGarment from schema 2", () => {
+  // Schema 2 only recorded garments tagged bikeable; schema 3 flips the default,
+  // so every garment starts as fine for biking until marked otherwise.
+  it("replaces bikeable with noBiking off, whatever bikeable was", () => {
+    expect(migrateGarment(v2)).toEqual(v3);
+    expect(migrateGarment({ ...v2, bikeable: true })).toEqual(v3);
+  });
+});
+
 describe("migrateGarment on the current schema", () => {
   it("returns a valid record unchanged", () => {
-    expect(migrateGarment(v2)).toEqual(v2);
+    expect(migrateGarment(v3)).toEqual(v3);
+    expect(migrateGarment({ ...v3, noBiking: true }).noBiking).toBe(true);
   });
 
   it("drops derived data unless all of it is present", () => {
-    const { derivedBy: _, ...partial } = v2;
+    const { derivedBy: __, ...partial } = v3;
     const migrated = migrateGarment(partial);
     expect(migrated.cutout).toBeUndefined();
     expect(migrated.embedding).toBeUndefined();
   });
 
   it("drops fields it doesn't know", () => {
-    expect(migrateGarment({ ...v2, leftover: 1 })).toEqual(v2);
+    expect(migrateGarment({ ...v3, leftover: 1 })).toEqual(v3);
   });
 });
 
 describe("migrateGarment on unreadable input", () => {
   it("names the field that is wrong", () => {
-    expect(() => migrateGarment({ ...v2, category: "Avaruuspuvut" })).toThrow(
+    expect(() => migrateGarment({ ...v3, category: "Avaruuspuvut" })).toThrow(
       "Invalid garment field: category",
     );
     expect(() => migrateGarment({ ...v1, image: "nope" })).toThrow(
@@ -111,7 +124,7 @@ describe("migrateGarment on unreadable input", () => {
   });
 
   it("rejects a schema newer than this app knows", () => {
-    expect(() => migrateGarment({ ...v2, schema: 3 })).toThrow(
+    expect(() => migrateGarment({ ...v3, schema: 4 })).toThrow(
       "Invalid garment field: schema",
     );
   });
