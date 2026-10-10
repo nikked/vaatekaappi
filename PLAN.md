@@ -33,7 +33,9 @@ photo-based try-on, profile photos.
 | Design      | Mockup as is: `mockups/index.html` (cream, terracotta, Fraunces)    |
 | Fonts       | Fraunces + Nunito Sans, bundled in the repo (no Google Fonts)       |
 | Photos      | Background removed once on add; cut-outs used in cards and collages |
-| Devices     | Laptop only for now; phone layout kept. Hosting and sync later      |
+| Devices     | Laptop only for now (iPhone later, see backlog); phone layout kept  |
+| Hosting     | GitHub Pages: nikked.github.io/vaatekaappi, deployed from `main`    |
+| Categories  | Hardcoded in `src/garment.ts`, changed on request; no in-app editor |
 
 ## Data model
 
@@ -79,21 +81,29 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 
 ### Vaatekaappi
 - Grid of garment cards (cut-out photo, name, color dots, heart), filter chips
-  by top-level category plus Lempivaatteet. Export/import behind a "⋯" menu.
-- Drop one or many photos → a banner ("5 uutta kuvaa odottaa tarkistusta")
-  opens the review queue (Tarkistus). Each item shows the photo and
-  prefilled fields. For each attribute, the top 3 suggestions appear as chips,
-  best one preselected; one click changes it, Enter confirms and moves to the
-  next item.
-- Click a garment → same edit form.
-- Export / import JSON.
+  by top-level category plus Lempivaatteet. Backup export/import (zip) behind a
+  "⋯" menu.
+- Photos are added with "Lisää kuvia" or dropped anywhere on the screen, from
+  Finder or the Photos app. Recognition runs in a queue outside the screen
+  (`src/imports.ts`), so it continues on Asut and Värini; a top-bar status shows
+  progress, then how many wait for review. A photo that can't be read doesn't
+  stop the rest; failures are listed with the likely cause (HEIC outside
+  Safari, or models that didn't load).
+- A banner ("5 uutta kuvaa odottaa tarkistusta") opens the review queue
+  (Tarkistus). Each item shows the cut-out and prefilled fields; the top 3
+  category suggestions appear as chips, best one preselected. Enter confirms
+  and moves to the next item.
+- Click a garment → same form, with Poista. Bottoms and dresses have their own
+  "Ei sovellu pyöräilyyn" checkbox.
 
 ### Asut
-- Occasion (Arki / Juhla) and Pyöräily pickers, with the number of outfits →
-  ranked list of generated outfits. Each card shows 5 score dots; the best one
-  gets a "Sopii sinulle" badge. No explanation text.
-- Pick an outfit, or swap single garments → dress me: collage of garment images
-  laid out by slot.
+- Pickers: Vaate (outfits built around one chosen garment), Tilanne (Arki /
+  Juhla) and Pyöräily (Kaikki / Pyöräilyyn / Ei pyöräilyyn). The number of
+  outfits shows under the heading, so the effect of a filter is visible.
+- Ranked outfit cards with a collage, the garments, and 5 Sopivuus dots; the
+  best one gets a "Sopii sinulle" badge. "Vaihda osa" swaps single garments.
+- Hover help ("?" marks and the Sopivuus dots) explains the filters, the score
+  and the form fields (`src/Tip.tsx`).
 
 ### Värini
 - Pick one of the 12 season types; its preset palette (an approximation)
@@ -116,7 +126,11 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
   (PNG with alpha) is stored next to the original. BiRefNet-lite (MIT) was
   tried first: it exceeds Apple GPUs' WebGPU limits and runs out of WASM memory.
 - Load the models at app start so it is warm before the first upload; cache it in
-  the browser after first download.
+  the browser after first download. A banner shows the download in MB, or
+  "Valmistellaan…" with a sliding bar when there are no byte counts (cached).
+- Device: WebGPU only if an adapter is actually returned; otherwise WASM. Firefox
+  can expose `navigator.gpu` with no adapter (blocklisted GPU). A model that
+  fails to load on WebGPU is retried on WASM (~10 s per photo instead of ~1 s).
 - Category: compute embedding on drop. Zero-shot similarity against a text
   prompt per category (e.g. "a photo of a long skirt"), combined with k-NN
   over confirmed garments; examples gain weight as their count grows. Top 3
@@ -173,5 +187,15 @@ All pure functions over `Garment[]`:
   ~5 outfits. Optionally compare Gemini.
 - Decides whether photo try-on (cloud) goes into a later version.
 
+## Local data (`initial_data/`, not in git)
+
+Only on the developer's Mac: her original photos (HEIC, plus JPEG copies in
+`jpeg/`), her original `vaatteet.json` text list, the hand-converted
+`examples.json`, `build-import.mjs` that turns them
+into `vaatekaappi-import.json` (an old-format backup to import), and caches and
+screenshots from testing. `make test-integration` runs the real models on these
+photos; without the folder the test is skipped.
+
 ## Later
-- Hosting (static) and moving the wardrobe between devices.
+- Moving the wardrobe between devices (today only via the backup zip).
+- See `docs/backlog.md` for Firefox checks and iPhone support.
