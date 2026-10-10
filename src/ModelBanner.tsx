@@ -23,6 +23,17 @@ export const ModelBanner = () => {
   }
 
   const { loaded, total } = totalProgress(downloads);
+  // Without byte counts (models already cached, or being set up after the
+  // download) there is nothing to measure, so the bar only shows activity.
+  if (total === 0 || loaded >= total) {
+    return (
+      <div className="model-banner" role="status">
+        <strong>Valmistellaan kuvantunnistusta…</strong>
+        <div className="busy-bar" />
+      </div>
+    );
+  }
+
   return (
     <div className="model-banner" role="status">
       <strong>Ladataan kuvantunnistusta…</strong>
@@ -31,16 +42,10 @@ export const ModelBanner = () => {
         mallit (noin 300 Mt). Ne tallentuvat selaimeen, joten seuraavilla
         kerroilla käynnistys on nopea. Vaatekaappia voi selata sillä aikaa.
       </p>
-      {total > 0 && loaded < total ? (
-        <>
-          <progress max={total} value={loaded} />
-          <span className="hint">
-            {megabytes(loaded)} / {megabytes(total)}
-          </span>
-        </>
-      ) : (
-        <progress />
-      )}
+      <progress max={total} value={loaded} />
+      <span className="hint">
+        {megabytes(loaded)} / {megabytes(total)}
+      </span>
     </div>
   );
 };

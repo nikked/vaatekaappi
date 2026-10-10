@@ -1237,3 +1237,34 @@ kbd {
 .import-status progress::-moz-progress-bar {
   background: var(--c-terracotta);
 }
+.busy-bar {
+  position: relative;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-line);
+  overflow: hidden;
+}
+.busy-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  border-radius: var(--r-pill);
+  background: var(--c-teal);
+  animation: busy-slide 1.4s ease-in-out infinite;
+}
+@keyframes busy-slide {
+  from {
+    left: -30%;
+  }
+  to {
+    left: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .busy-bar::after {
+    left: 35%;
+    animation: none;
+  }
+}
