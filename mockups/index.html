@@ -1,0 +1,733 @@
+<!doctype html>
+<!--
+  PROTOTYPE: static visual mockup of the wardrobe app (warm autumn theme).
+  Throwaway. Open directly in a browser; switch screens with #vaatekaappi, #tarkistus, #asut.
+  The :root tokens are meant to be copied into src/styles.css later.
+-->
+<html lang="fi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vaatekaappi – mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400..600,100&family=Nunito+Sans:opsz,wght@6..12,400..700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  /* Colors: warm autumn */
+  --c-bg: #fbf6ee;          /* cream page */
+  --c-surface: #fffcf7;     /* ivory cards */
+  --c-sunk: #f3eadc;        /* sand wells, inactive chips */
+  --c-line: #e6d7c3;        /* hairlines */
+  --c-text: #4a3426;        /* soft brown */
+  --c-text-soft: #8a6f5c;
+  --c-terracotta: #c0643f;  /* primary */
+  --c-rust: #9c4527;        /* primary hover / pressed */
+  --c-mustard: #d6a23a;
+  --c-olive: #7d7b3f;
+  --c-teal: #2f7a72;
+  --c-heart: #c0643f;
+  --c-primary: var(--c-terracotta);
+  --c-on-primary: #fffaf3;
+
+  /* Type */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Nunito Sans", system-ui, sans-serif;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.9375rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.75rem;
+
+  /* Shape */
+  --r-sm: 10px;
+  --r-md: 18px;
+  --r-lg: 28px;
+  --r-pill: 999px;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  --shadow: 0 1px 2px rgb(74 52 38 / 0.06), 0 8px 24px -12px rgb(74 52 38 / 0.18);
+}
+
+* { box-sizing: border-box; }
+html { background: var(--c-bg); }
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font: 400 var(--fs-md)/1.5 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 100;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+/* ---------- App shell ---------- */
+.shell { max-width: 1120px; margin: 0 auto; padding: var(--s-5) var(--s-5) var(--s-7); }
+.topbar { display: flex; align-items: center; gap: var(--s-5); margin-bottom: var(--s-6); }
+.brand {
+  display: flex; align-items: center; gap: var(--s-2);
+  font-family: var(--font-display); font-variation-settings: "SOFT" 100;
+  font-size: 1.375rem; font-weight: 500;
+}
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: conic-gradient(var(--c-terracotta) 0 25%, var(--c-mustard) 0 50%, var(--c-olive) 0 75%, var(--c-teal) 0);
+  box-shadow: inset 0 0 0 5px var(--c-bg);
+}
+.tabs { display: flex; gap: var(--s-1); padding: var(--s-1); background: var(--c-sunk); border-radius: var(--r-pill); }
+.tab {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-2) var(--s-4); border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--c-text-soft); font-weight: 600; text-decoration: none;
+}
+.tab svg { width: 18px; height: 18px; }
+.tab[aria-current="page"] { background: var(--c-surface); color: var(--c-text); box-shadow: var(--shadow); }
+.topbar .spacer { flex: 1; }
+
+/* ---------- Generic controls ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  padding: 10px var(--s-5); border-radius: var(--r-pill); border: 0;
+  font-weight: 700; text-decoration: none; white-space: nowrap;
+}
+.btn svg { width: 18px; height: 18px; }
+.btn-primary { background: var(--c-primary); color: var(--c-on-primary); box-shadow: 0 6px 16px -8px var(--c-rust); }
+.btn-primary:hover { background: var(--c-rust); }
+.btn-ghost { background: transparent; color: var(--c-text-soft); }
+.btn-ghost:hover { background: var(--c-sunk); color: var(--c-text); }
+.btn-soft { background: var(--c-sunk); color: var(--c-text); }
+.icon-btn {
+  display: grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 50%; border: 0; background: transparent; color: var(--c-text-soft);
+}
+.icon-btn:hover { background: var(--c-sunk); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: 7px var(--s-4); border-radius: var(--r-pill);
+  border: 1.5px solid transparent; background: var(--c-sunk); color: var(--c-text);
+  font-weight: 600; font-size: var(--fs-md); white-space: nowrap;
+}
+.chip:hover { border-color: var(--c-line); }
+.chip .count { color: var(--c-text-soft); font-weight: 400; font-size: var(--fs-sm); }
+.chip[aria-pressed="true"] { background: var(--c-text); color: var(--c-bg); }
+.chip[aria-pressed="true"] .count { color: color-mix(in oklab, var(--c-bg) 70%, transparent); }
+.chip svg { width: 16px; height: 16px; }
+
+.dot {
+  display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(74 52 38 / 0.18);
+}
+
+/* ---------- Menu (export/import) ---------- */
+.menu { position: relative; }
+.menu summary { list-style: none; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu-panel {
+  position: absolute; right: 0; top: calc(100% + var(--s-2)); z-index: 5;
+  min-width: 220px; padding: var(--s-2); background: var(--c-surface);
+  border: 1px solid var(--c-line); border-radius: var(--r-md); box-shadow: var(--shadow);
+}
+.menu-panel button {
+  display: flex; align-items: center; gap: var(--s-3); width: 100%;
+  padding: 10px var(--s-3); border: 0; border-radius: var(--r-sm); background: none; text-align: left;
+}
+.menu-panel button:hover { background: var(--c-sunk); }
+.menu-panel svg { width: 18px; height: 18px; color: var(--c-text-soft); }
+.menu-panel small { display: block; color: var(--c-text-soft); font-size: var(--fs-sm); }
+
+/* ---------- Screens ---------- */
+.screen { display: none; }
+.screen.active { display: block; }
+.screen-head { display: flex; align-items: flex-end; gap: var(--s-4); margin-bottom: var(--s-5); flex-wrap: wrap; }
+.screen-head h1 { font-size: var(--fs-xl); line-height: 1.15; }
+.screen-head p { margin: var(--s-1) 0 0; color: var(--c-text-soft); }
+.screen-head .grow { flex: 1; min-width: 200px; }
+
+/* ---------- Wardrobe ---------- */
+.notice {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4); margin-bottom: var(--s-5);
+  border-radius: var(--r-md);
+  background: color-mix(in oklab, var(--c-mustard) 18%, var(--c-surface));
+}
+.notice .stack { display: flex; }
+.notice .stack span {
+  width: 34px; height: 34px; border-radius: 10px; margin-left: -10px;
+  border: 2px solid var(--c-surface);
+}
+.notice .stack span:first-child { margin-left: 0; }
+.notice p { margin: 0; flex: 1; }
+.notice .btn-soft { background: var(--c-surface); }
+.notice strong { font-weight: 700; }
+
+.filters { display: flex; gap: var(--s-2); overflow-x: auto; padding-bottom: var(--s-2); margin-bottom: var(--s-4); scrollbar-width: none; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--s-5); }
+.card { position: relative; display: flex; flex-direction: column; gap: var(--s-2); }
+.photo {
+  position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-lg);
+  display: grid; place-items: center; overflow: hidden;
+  background: color-mix(in oklab, var(--tint) 16%, var(--c-sunk));
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover .photo { transform: translateY(-2px); box-shadow: var(--shadow); }
+.photo svg.garment { width: 66%; height: 66%; color: var(--tint); filter: drop-shadow(0 6px 8px rgb(74 52 38 / 0.14)); }
+.heart {
+  position: absolute; top: var(--s-3); right: var(--s-3);
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 0;
+  background: rgb(255 252 247 / 0.85); color: var(--c-text-soft); backdrop-filter: blur(4px);
+}
+.heart svg { width: 18px; height: 18px; }
+.heart[aria-pressed="true"] { color: var(--c-heart); }
+.card-meta { display: flex; align-items: center; gap: var(--s-2); padding: 0 var(--s-1); }
+.card-meta .name { flex: 1; font-weight: 700; line-height: 1.3; }
+.card-meta .dots { display: flex; gap: 3px; }
+.card-sub { margin: -6px 0 0; padding: 0 var(--s-1); color: var(--c-text-soft); font-size: var(--fs-sm); }
+
+/* ---------- Review ---------- */
+.review-top { display: flex; align-items: center; gap: var(--s-4); margin-bottom: var(--s-5); }
+.progress { display: flex; align-items: center; gap: var(--s-3); margin-left: auto; color: var(--c-text-soft); font-weight: 600; }
+.progress-dots { display: flex; gap: 6px; }
+.progress-dots span { width: 28px; height: 6px; border-radius: var(--r-pill); background: var(--c-line); }
+.progress-dots .done { background: var(--c-olive); }
+.progress-dots .now { background: var(--c-terracotta); }
+.review {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s-6);
+  padding: var(--s-5); background: var(--c-surface); border-radius: var(--r-lg); box-shadow: var(--shadow);
+}
+.review .photo { aspect-ratio: 1; }
+.review .photo svg.garment { width: 62%; height: 62%; }
+.queue { display: flex; gap: var(--s-2); margin-top: var(--s-3); }
+.queue span {
+  flex: 1; aspect-ratio: 1; border-radius: var(--r-sm); display: grid; place-items: center;
+  background: color-mix(in oklab, var(--tint) 16%, var(--c-bg)); opacity: 0.55;
+}
+.queue span svg { width: 60%; height: 60%; color: var(--tint); }
+.queue .now { opacity: 1; outline: 2px solid var(--c-terracotta); outline-offset: 2px; }
+.queue .done { opacity: 0.9; }
+.fields { display: flex; flex-direction: column; gap: var(--s-5); }
+.field-label { display: flex; align-items: baseline; gap: var(--s-2); margin-bottom: var(--s-2); font-weight: 700; }
+.field-label small { font-weight: 400; color: var(--c-text-soft); font-size: var(--fs-sm); }
+.text-input {
+  width: 100%; padding: 12px var(--s-4); border-radius: var(--r-md);
+  border: 1.5px solid var(--c-line); background: var(--c-bg);
+  font-family: var(--font-display); font-variation-settings: "SOFT" 100; font-size: var(--fs-lg);
+}
+.text-input:focus { outline: none; border-color: var(--c-terracotta); }
+.suggest { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.suggest .chip[aria-pressed="true"] { background: var(--c-terracotta); color: var(--c-on-primary); }
+.suggest .chip .pct { font-size: var(--fs-sm); opacity: 0.7; font-weight: 400; }
+.path { margin-top: var(--s-2); color: var(--c-text-soft); font-size: var(--fs-sm); }
+.swatches { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.swatch {
+  position: relative; width: 44px; height: 44px; border-radius: 50%; border: 0;
+  box-shadow: inset 0 0 0 1px rgb(74 52 38 / 0.18);
+}
+.swatch[aria-pressed="true"] { box-shadow: inset 0 0 0 1px rgb(74 52 38 / 0.18), 0 0 0 3px var(--c-surface), 0 0 0 5px var(--c-terracotta); }
+.swatch-add {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%;
+  border: 1.5px dashed var(--c-line); background: none; color: var(--c-text-soft); overflow: hidden; position: relative;
+}
+.swatch-add input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.swatch-add svg { width: 18px; height: 18px; }
+.hint { color: var(--c-text-soft); font-size: var(--fs-sm); }
+.toggles { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.toggle { padding: 7px var(--s-4); }
+.toggle[aria-pressed="true"] { background: color-mix(in oklab, var(--c-olive) 22%, var(--c-surface)); border-color: var(--c-olive); color: var(--c-text); }
+.toggle[aria-pressed="true"]::before { content: "✓"; color: var(--c-olive); font-weight: 800; }
+.review-actions { display: flex; align-items: center; gap: var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--c-line); margin-top: auto; }
+.review-actions .kbd { margin-right: auto; color: var(--c-text-soft); font-size: var(--fs-sm); }
+kbd {
+  padding: 2px 7px; border-radius: 6px; background: var(--c-sunk); border-bottom: 2px solid var(--c-line);
+  font: 600 var(--fs-sm) var(--font-body);
+}
+
+/* ---------- Outfits ---------- */
+.pickers {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-4) var(--s-6);
+  padding: var(--s-4) var(--s-5); margin-bottom: var(--s-6);
+  background: var(--c-surface); border-radius: var(--r-lg); box-shadow: var(--shadow);
+}
+.picker { display: flex; align-items: center; gap: var(--s-3); }
+.picker-label { color: var(--c-text-soft); font-weight: 600; font-size: var(--fs-sm); }
+.segmented { display: flex; padding: 3px; background: var(--c-sunk); border-radius: var(--r-pill); }
+.segmented button {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px var(--s-4); border: 0; border-radius: var(--r-pill); background: none; font-weight: 600; color: var(--c-text-soft);
+}
+.segmented button svg { width: 16px; height: 16px; }
+.segmented button[aria-pressed="true"] { background: var(--c-surface); color: var(--c-text); box-shadow: var(--shadow); }
+.switch { display: flex; align-items: center; gap: var(--s-3); font-weight: 600; border: 0; background: none; padding: 0; }
+.switch .track { width: 44px; height: 26px; border-radius: var(--r-pill); background: var(--c-line); position: relative; transition: background 0.2s; }
+.switch .track::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--c-surface); box-shadow: 0 1px 3px rgb(74 52 38 / 0.3); transition: transform 0.2s;
+}
+.switch[aria-pressed="true"] .track { background: var(--c-teal); }
+.switch[aria-pressed="true"] .track::after { transform: translateX(18px); }
+.switch svg { width: 18px; height: 18px; color: var(--c-text-soft); }
+
+.outfits { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--s-5); }
+.outfit {
+  display: flex; flex-direction: column; background: var(--c-surface);
+  border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden;
+}
+.outfit.best { outline: 2px solid color-mix(in oklab, var(--c-mustard) 60%, transparent); }
+.collage {
+  position: relative; aspect-ratio: 5 / 4;
+  background:
+    radial-gradient(circle at 30% 20%, color-mix(in oklab, var(--c-mustard) 10%, transparent), transparent 60%),
+    var(--c-sunk);
+}
+.collage > svg { position: absolute; filter: drop-shadow(0 6px 8px rgb(74 52 38 / 0.16)); }
+.collage .outer { left: 5%; top: 16%; width: 44%; height: 70%; transform: rotate(-5deg); }
+.collage .top { left: 50%; top: 5%; width: 36%; height: 44%; transform: rotate(3deg); }
+.collage .bottom { left: 52%; top: 47%; width: 32%; height: 48%; transform: rotate(-2deg); }
+.collage.no-outer .top { left: 10%; top: 14%; width: 42%; height: 62%; transform: rotate(-4deg); }
+.collage.no-outer .bottom { left: 54%; top: 10%; width: 34%; height: 80%; transform: rotate(3deg); }
+.badge {
+  position: absolute; left: var(--s-3); top: var(--s-3);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px var(--s-3); border-radius: var(--r-pill);
+  background: var(--c-surface); font-weight: 700; font-size: var(--fs-sm); box-shadow: var(--shadow);
+}
+.badge svg { width: 14px; height: 14px; color: var(--c-mustard); }
+.outfit-body { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4) var(--s-5) var(--s-5); }
+.outfit-head { display: flex; align-items: center; gap: var(--s-3); }
+.outfit-head h3 { flex: 1; font-size: var(--fs-lg); }
+.score { display: flex; gap: 4px; }
+.score span { width: 8px; height: 8px; border-radius: 50%; background: var(--c-line); }
+.score .on { background: var(--c-terracotta); }
+.outfit-items { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px var(--s-3); color: var(--c-text-soft); font-size: var(--fs-sm); }
+.outfit-items li { display: flex; align-items: center; gap: 6px; }
+.outfit-items .dot { width: 10px; height: 10px; }
+.why { margin: var(--s-1) 0 0; font-size: var(--fs-sm); }
+.outfit-actions { display: flex; gap: var(--s-2); margin-top: var(--s-2); }
+.outfit-actions .btn { padding: 8px var(--s-4); }
+
+/* ---------- Phone ---------- */
+@media (max-width: 720px) {
+  .shell { padding: var(--s-4) var(--s-4) 104px; }
+  .topbar { margin-bottom: var(--s-5); gap: var(--s-3); }
+  .tabs {
+    position: fixed; z-index: 10; left: var(--s-4); right: var(--s-4); bottom: var(--s-4);
+    justify-content: space-around; background: var(--c-surface); box-shadow: 0 10px 30px -10px rgb(74 52 38 / 0.35);
+    border: 1px solid var(--c-line);
+  }
+  .tab { flex: 1; justify-content: center; padding: 12px var(--s-3); }
+  .tab[aria-current="page"] { background: var(--c-sunk); box-shadow: none; }
+  .topbar .add-label { display: none; }
+  .topbar .btn-primary { padding: 10px; width: 44px; height: 44px; }
+  .screen-head h1 { font-size: 1.5rem; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4) var(--s-3); }
+  .photo { border-radius: var(--r-md); }
+  .heart { width: 32px; height: 32px; top: var(--s-2); right: var(--s-2); }
+  .card-meta .name { font-size: var(--fs-sm); }
+  .card-sub { display: none; }
+  .notice { flex-wrap: wrap; }
+  .notice .btn { width: 100%; }
+  .review { grid-template-columns: 1fr; padding: var(--s-4); gap: var(--s-5); }
+  .review .photo { aspect-ratio: 4 / 3; }
+  .review-top { flex-wrap: wrap; gap: var(--s-2); }
+  .progress-dots span { width: 18px; }
+  .review-actions .kbd { display: none; }
+  /* Review is a focused flow on phone: the save bar replaces the tab bar. */
+  body[data-screen="tarkistus"] .tabs { display: none; }
+  .review-actions {
+    position: fixed; z-index: 10; left: var(--s-4); right: var(--s-4); bottom: var(--s-4);
+    padding: var(--s-2); border: 1px solid var(--c-line); border-radius: var(--r-pill);
+    background: var(--c-surface); box-shadow: 0 10px 30px -10px rgb(74 52 38 / 0.35);
+  }
+  .review-actions .btn-primary { flex: 1; }
+  .pickers { flex-direction: column; align-items: stretch; gap: var(--s-3); padding: var(--s-4); }
+  .picker { justify-content: space-between; }
+  .outfits { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Garment silhouettes; fill follows `color` so each placeholder is tinted with the garment's hex. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="marseille" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">
+      <rect width="22" height="22" fill="#ff9900" />
+      <path d="M11 3c3 3 3 5 0 8-3-3-3-5 0-8zM11 11c3 3 3 5 0 8-3-3-3-5 0-8z" fill="#089191" />
+      <circle cx="0" cy="11" r="2.2" fill="#089191" /><circle cx="22" cy="11" r="2.2" fill="#089191" />
+    </pattern>
+    <filter id="soft"><feGaussianBlur stdDeviation="0.2" /></filter>
+  </defs>
+  <symbol id="g-jacket" viewBox="0 0 100 100">
+    <path d="M36 10 50 18 64 10 84 20 93 66 81 69 75 40 76 92H24l1-52-6 29-12-3 9-46z" fill="currentColor" stroke="rgb(74 52 38 / .28)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M36 10 44 30 50 18 56 30 64 10M50 30v62" fill="none" stroke="rgb(255 255 255 / .35)" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M50 30v62" fill="none" stroke="rgb(0 0 0 / .18)" stroke-width="1"/>
+    <circle cx="53" cy="44" r="1.5" fill="rgb(255 255 255 / .55)"/><circle cx="53" cy="58" r="1.5" fill="rgb(255 255 255 / .55)"/><circle cx="53" cy="72" r="1.5" fill="rgb(255 255 255 / .55)"/>
+  </symbol>
+  <symbol id="g-blazer" viewBox="0 0 100 100">
+    <path d="M36 10 50 16 64 10 84 20 93 66 81 69 75 40 77 92H23l2-52-6 29-12-3 9-46z" fill="currentColor" stroke="rgb(74 52 38 / .28)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M36 10 41 46 50 58 59 46 64 10" fill="rgb(0 0 0 / .12)" stroke="rgb(0 0 0 / .18)" stroke-width="1" stroke-linejoin="round"/>
+    <path d="M42 16 50 58 58 16" fill="#fffcf7" opacity=".9"/>
+    <circle cx="50" cy="68" r="1.8" fill="rgb(0 0 0 / .25)"/>
+  </symbol>
+  <symbol id="g-sweater" viewBox="0 0 100 100">
+    <path d="M37 12Q50 22 63 12L83 21Q90 40 92 70L81 72 76 42 75 84Q50 90 25 84L24 42 19 72 8 70Q10 40 17 21z" fill="currentColor" stroke="rgb(74 52 38 / .28)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M37 12Q50 22 63 12M25 80Q50 86 75 80M9 66 19 68M81 68 91 66" fill="none" stroke="rgb(0 0 0 / .14)" stroke-width="2.4" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="g-tee" viewBox="0 0 100 100">
+    <path d="M36 14Q50 24 64 14L88 26 80 44 72 40 73 88H27l1-48-8 4-8-18z" fill="currentColor" stroke="rgb(74 52 38 / .32)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M36 14Q50 24 64 14" fill="none" stroke="rgb(74 52 38 / .2)" stroke-width="2"/>
+  </symbol>
+  <symbol id="g-skirt" viewBox="0 0 100 100">
+    <path d="M33 8h34l-1 9 20 74Q50 98 14 91l20-74z" fill="url(#marseille)" stroke="rgb(74 52 38 / .28)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M33 8h34l-1 9H34z" fill="#c76f00"/>
+    <path d="M44 20 38 92M56 20 62 92" stroke="rgb(0 0 0 / .1)" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="g-wide" viewBox="0 0 100 100">
+    <path d="M30 6h40l14 88H55L50 34l-5 60H16z" fill="currentColor" stroke="rgb(74 52 38 / .3)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M30 13h40" stroke="rgb(255 255 255 / .12)" stroke-width="1.4"/>
+  </symbol>
+  <symbol id="g-jeans" viewBox="0 0 100 100">
+    <path d="M31 6h38l4 88H56L50 32l-6 62H27z" fill="currentColor" stroke="rgb(74 52 38 / .3)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M31 13h38M36 13q2 10 12 10M64 13q-2 10-12 10M50 13v19" fill="none" stroke="#e7b45a" stroke-width="1" stroke-dasharray="2 1.5" opacity=".8"/>
+  </symbol>
+
+  <symbol id="i-hanger" viewBox="0 0 24 24"><path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3l9 6.5a1.5 1.5 0 0 1-.9 2.5H3.9a1.5 1.5 0 0 1-.9-2.5L12 8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3c.6 4.2 1.8 5.4 6 6-4.2.6-5.4 1.8-6 6-.6-4.2-1.8-5.4-6-6 4.2-.6 5.4-1.8 6-6zM18.5 15c.3 2 .9 2.6 2.5 3-1.6.4-2.2 1-2.5 3-.3-2-.9-2.6-2.5-3 1.6-.4 2.2-1 2.5-3z" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-heart-fill" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill="currentColor"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8" fill="currentColor"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><circle cx="19" cy="12" r="1.8" fill="currentColor"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15zm0 0 8-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bike" viewBox="0 0 24 24"><circle cx="6" cy="16" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="18" cy="16" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M6 16l4-7h6l2 7M10 9l3 7h-7M14 6h3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M4 7h3c5 0 5 10 10 10h3m0 0-3-3m3 3-3 3M4 17h3c1.5 0 2.5-.8 3.3-2M20 7h-3c-1.5 0-2.5.8-3.3 2M20 7l-3-3m3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark"></span>Kaappi</div>
+    <nav class="tabs">
+      <a class="tab" href="#vaatekaappi" data-tab="vaatekaappi"><svg><use href="#i-hanger"/></svg>Vaatekaappi</a>
+      <a class="tab" href="#asut" data-tab="asut"><svg><use href="#i-sparkle"/></svg>Asut</a>
+    </nav>
+    <span class="spacer"></span>
+    <a class="btn btn-primary" href="#tarkistus" title="Lisää kuvia"><svg><use href="#i-plus"/></svg><span class="add-label">Lisää kuvia</span></a>
+    <details class="menu">
+      <summary class="icon-btn" title="Lisää toimintoja"><svg><use href="#i-more"/></svg></summary>
+      <div class="menu-panel">
+        <button><svg><use href="#i-down"/></svg><span>Vie varmuuskopio<small>Kaikki vaatteet yhteen tiedostoon</small></span></button>
+        <button><svg><use href="#i-up"/></svg><span>Tuo varmuuskopio<small>Korvaa nykyisen vaatekaapin</small></span></button>
+      </div>
+    </details>
+  </header>
+
+  <!-- ================= 1. Vaatekaappi ================= -->
+  <main class="screen" id="vaatekaappi">
+    <div class="screen-head">
+      <div class="grow">
+        <h1>Vaatekaappi</h1>
+        <p>7 vaatetta · 3 lempivaatetta</p>
+      </div>
+    </div>
+
+    <div class="notice">
+      <div class="stack">
+        <span style="background:#cc99ff"></span><span style="background:#1fad8a"></span><span style="background:#ff9900"></span>
+      </div>
+      <p><strong>5 uutta kuvaa</strong> odottaa tarkistusta.</p>
+      <a class="btn btn-soft" href="#tarkistus">Jatka tarkistusta</a>
+    </div>
+
+    <div class="filters">
+      <button class="chip" aria-pressed="true">Kaikki <span class="count">7</span></button>
+      <button class="chip">Yläosat <span class="count">2</span></button>
+      <button class="chip">Alaosat <span class="count">3</span></button>
+      <button class="chip">Takit <span class="count">2</span></button>
+      <button class="chip">Mekot <span class="count">0</span></button>
+      <button class="chip"><svg style="color:var(--c-heart)"><use href="#i-heart-fill"/></svg>Lempivaatteet</button>
+    </div>
+
+    <div class="grid">
+      <article class="card">
+        <div class="photo" style="--tint:#394046"><svg class="garment"><use href="#g-jacket"/></svg>
+          <button class="heart" aria-pressed="true" title="Lempivaate"><svg><use href="#i-heart-fill"/></svg></button></div>
+        <div class="card-meta"><span class="name">Musta farkkupaita</span><span class="dots"><span class="dot" style="background:#394046"></span></span></div>
+        <p class="card-sub">Sisätakit</p>
+      </article>
+      <article class="card">
+        <div class="photo" style="--tint:#cc99ff"><svg class="garment"><use href="#g-sweater"/></svg>
+          <button class="heart" aria-pressed="true" title="Lempivaate"><svg><use href="#i-heart-fill"/></svg></button></div>
+        <div class="card-meta"><span class="name">Liila neulepaita</span><span class="dots"><span class="dot" style="background:#cc99ff"></span></span></div>
+        <p class="card-sub">Neulepaidat</p>
+      </article>
+      <article class="card">
+        <div class="photo" style="--tint:#ffffff"><svg class="garment"><use href="#g-tee"/></svg>
+          <button class="heart" aria-pressed="false" title="Lempivaate"><svg><use href="#i-heart"/></svg></button></div>
+        <div class="card-meta"><span class="name">Valkoinen paksu t-paita</span><span class="dots"><span class="dot" style="background:#ffffff"></span></span></div>
+        <p class="card-sub">T-paidat</p>
+      </article>
+      <article class="card">
+        <div class="photo" style="--tint:#1fad8a"><svg class="garment"><use href="#g-blazer"/></svg>
+          <button class="heart" aria-pressed="false" title="Lempivaate"><svg><use href="#i-heart"/></svg></button></div>
+        <div class="card-meta"><span class="name">Vihreä bleiseri</span><span class="dots"><span class="dot" style="background:#1fad8a"></span></span></div>
+        <p class="card-sub">Sisätakit</p>
+      </article>
+      <article class="card">
+        <div class="photo" style="--tint:#ff9900"><svg class="garment"><use href="#g-skirt"/></svg>
+          <button class="heart" aria-pressed="true" title="Lempivaate"><svg><use href="#i-heart-fill"/></svg></button></div>
+        <div class="card-meta"><span class="name">Marseille hame</span><span class="dots"><span class="dot" style="background:#ff9900"></span><span class="dot" style="background:#089191"></span></span></div>
+        <p class="card-sub">Pitkät hameet</p>
+      </article>
+      <article class="card">
+        <div class="photo" style="--tint:#1a000d"><svg class="garment"><use href="#g-wide"/></svg>
+          <button class="heart" aria-pressed="false" title="Lempivaate"><svg><use href="#i-heart"/></svg></button></div>
+        <div class="card-meta"><span class="name">Mustat leveälahkeiset housut</span><span class="dots"><span class="dot" style="background:#1a000d"></span></span></div>
+        <p class="card-sub">Housut</p>
+      </article>
+      <article class="card">
+        <div class="photo" style="--tint:#0066cc"><svg class="garment"><use href="#g-jeans"/></svg>
+          <button class="heart" aria-pressed="false" title="Lempivaate"><svg><use href="#i-heart"/></svg></button></div>
+        <div class="card-meta"><span class="name">Siniset farkut</span><span class="dots"><span class="dot" style="background:#0066cc"></span></span></div>
+        <p class="card-sub">Housut</p>
+      </article>
+    </div>
+  </main>
+
+  <!-- ================= 2. Tarkistus ================= -->
+  <main class="screen" id="tarkistus">
+    <div class="review-top">
+      <a class="btn btn-ghost" href="#vaatekaappi" style="padding-left:var(--s-2)"><svg><use href="#i-back"/></svg>Vaatekaappi</a>
+      <div class="progress">
+        <div class="progress-dots"><span class="done"></span><span class="now"></span><span></span><span></span><span></span></div>
+        2 / 5
+      </div>
+    </div>
+
+    <section class="review">
+      <div>
+        <div class="photo" style="--tint:#cc99ff"><svg class="garment"><use href="#g-sweater"/></svg></div>
+        <div class="queue">
+          <span class="done" style="--tint:#1fad8a"><svg><use href="#g-blazer"/></svg></span>
+          <span class="now" style="--tint:#cc99ff"><svg><use href="#g-sweater"/></svg></span>
+          <span style="--tint:#ff9900"><svg><use href="#g-skirt"/></svg></span>
+          <span style="--tint:#ffffff"><svg><use href="#g-tee"/></svg></span>
+          <span style="--tint:#0066cc"><svg><use href="#g-jeans"/></svg></span>
+        </div>
+      </div>
+
+      <div class="fields">
+        <div>
+          <div class="field-label">Nimi</div>
+          <input class="text-input" value="Liila neulepaita" />
+        </div>
+
+        <div>
+          <div class="field-label">Kategoria <small>ehdotukset kuvan perusteella</small></div>
+          <div class="suggest">
+            <button class="chip" aria-pressed="true">Neulepaidat <span class="pct">92 %</span></button>
+            <button class="chip">Pitkähihaiset paidat <span class="pct">5 %</span></button>
+            <button class="chip">Sisätakit <span class="pct">3 %</span></button>
+            <button class="chip" style="background:none;border-color:var(--c-line)">Muu…</button>
+          </div>
+          <div class="path">Yläosa › Pitkähihaiset › Neulepaidat</div>
+        </div>
+
+        <div>
+          <div class="field-label">Värit</div>
+          <div class="swatches">
+            <button class="swatch" aria-pressed="true" style="background:#cc99ff" title="#cc99ff"></button>
+            <button class="swatch" style="background:#b48ae0" title="#b48ae0"></button>
+            <label class="swatch-add" title="Valitse väri"><svg><use href="#i-plus"/></svg><input type="color" value="#c0643f" /></label>
+            <span class="hint">Napauta poistaaksesi, + lisää värin</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="field-label">Tunnisteet</div>
+          <div class="toggles">
+            <button class="chip toggle" aria-pressed="true">yksivärinen</button>
+            <button class="chip toggle">kuviollinen</button>
+            <button class="chip toggle" aria-pressed="true">arki</button>
+            <button class="chip toggle" aria-pressed="true">juhla</button>
+            <button class="chip toggle" aria-pressed="true">lämmin</button>
+            <button class="chip toggle">viileä</button>
+            <button class="chip toggle">pyöräily</button>
+            <button class="chip toggle" aria-pressed="true">lempivaatteet</button>
+          </div>
+        </div>
+
+        <div class="review-actions">
+          <span class="kbd"><kbd>Enter</kbd> tallentaa</span>
+          <button class="btn btn-ghost">Ohita</button>
+          <button class="btn btn-primary">Tallenna &amp; seuraava</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= 3. Asut ================= -->
+  <main class="screen" id="asut">
+    <div class="screen-head">
+      <div class="grow">
+        <h1>Mitä puen tänään?</h1>
+        <p>Asut lämpimän syksyn värien mukaan, parhaat ensin.</p>
+      </div>
+    </div>
+
+    <div class="pickers">
+      <div class="picker">
+        <span class="picker-label">Tilanne</span>
+        <div class="segmented"><button aria-pressed="true">Arki</button><button>Juhla</button></div>
+      </div>
+      <div class="picker">
+        <span class="picker-label">Sää</span>
+        <div class="segmented">
+          <button><svg><use href="#i-sun"/></svg>Lämmin</button>
+          <button aria-pressed="true"><svg><use href="#i-leaf"/></svg>Viileä</button>
+        </div>
+      </div>
+      <div class="picker">
+        <button class="switch" aria-pressed="true"><svg><use href="#i-bike"/></svg>Pyöräily<span class="track"></span></button>
+      </div>
+    </div>
+
+    <div class="outfits">
+      <article class="outfit best">
+        <div class="collage">
+          <svg class="outer" style="color:#1fad8a"><use href="#g-blazer"/></svg>
+          <svg class="bottom"><use href="#g-skirt"/></svg>
+          <svg class="top" style="color:#ffffff"><use href="#g-tee"/></svg>
+          <span class="badge"><svg><use href="#i-sparkle"/></svg>Sopii sinulle</span>
+        </div>
+        <div class="outfit-body">
+          <div class="outfit-head"><h3>Petrooli &amp; oranssi</h3>
+            <span class="score" title="5 / 5"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></span></div>
+          <ul class="outfit-items">
+            <li><span class="dot" style="background:#1fad8a"></span>Vihreä bleiseri</li>
+            <li><span class="dot" style="background:#ffffff"></span>Valkoinen paksu t-paita</li>
+            <li><span class="dot" style="background:#ff9900"></span>Marseille hame</li>
+          </ul>
+          <p class="why">Hameen oranssi ja bleiserin vihreä ovat vastavärit. Valkoinen rauhoittaa.</p>
+          <div class="outfit-actions">
+            <button class="btn btn-soft"><svg><use href="#i-shuffle"/></svg>Vaihda osa</button>
+            <button class="icon-btn" title="Tallenna"><svg><use href="#i-heart"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <article class="outfit">
+        <div class="collage">
+          <svg class="outer" style="color:#394046"><use href="#g-jacket"/></svg>
+          <svg class="bottom" style="color:#1a000d"><use href="#g-wide"/></svg>
+          <svg class="top" style="color:#cc99ff"><use href="#g-sweater"/></svg>
+        </div>
+        <div class="outfit-body">
+          <div class="outfit-head"><h3>Liila & musta</h3>
+            <span class="score" title="4 / 5"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></span></div>
+          <ul class="outfit-items">
+            <li><span class="dot" style="background:#394046"></span>Musta farkkupaita</li>
+            <li><span class="dot" style="background:#cc99ff"></span>Liila neulepaita</li>
+            <li><span class="dot" style="background:#1a000d"></span>Mustat leveälahkeiset housut</li>
+          </ul>
+          <p class="why">Tummat neutraalit antavat liilan loistaa.</p>
+          <div class="outfit-actions">
+            <button class="btn btn-soft"><svg><use href="#i-shuffle"/></svg>Vaihda osa</button>
+            <button class="icon-btn" title="Tallenna"><svg><use href="#i-heart"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <article class="outfit">
+        <div class="collage">
+          <svg class="outer" style="color:#394046"><use href="#g-jacket"/></svg>
+          <svg class="bottom" style="color:#0066cc"><use href="#g-jeans"/></svg>
+          <svg class="top" style="color:#ffffff"><use href="#g-tee"/></svg>
+        </div>
+        <div class="outfit-body">
+          <div class="outfit-head"><h3>Rento farkku</h3>
+            <span class="score" title="3 / 5"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></span></div>
+          <ul class="outfit-items">
+            <li><span class="dot" style="background:#394046"></span>Musta farkkupaita</li>
+            <li><span class="dot" style="background:#ffffff"></span>Valkoinen paksu t-paita</li>
+            <li><span class="dot" style="background:#0066cc"></span>Siniset farkut</li>
+          </ul>
+          <p class="why">Toimiva, mutta kirkas sininen on viileä sävy sinulle.</p>
+          <div class="outfit-actions">
+            <button class="btn btn-soft"><svg><use href="#i-shuffle"/></svg>Vaihda osa</button>
+            <button class="icon-btn" title="Tallenna"><svg><use href="#i-heart"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <article class="outfit">
+        <div class="collage no-outer">
+          <svg class="bottom" style="color:#1a000d"><use href="#g-wide"/></svg>
+          <svg class="top" style="color:#cc99ff"><use href="#g-sweater"/></svg>
+        </div>
+        <div class="outfit-body">
+          <div class="outfit-head"><h3>Pehmeä neule</h3>
+            <span class="score" title="3 / 5"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></span></div>
+          <ul class="outfit-items">
+            <li><span class="dot" style="background:#cc99ff"></span>Liila neulepaita</li>
+            <li><span class="dot" style="background:#1a000d"></span>Mustat leveälahkeiset housut</li>
+          </ul>
+          <p class="why">Kaipaa lämpimän sävyn takin viileälle päivälle.</p>
+          <div class="outfit-actions">
+            <button class="btn btn-soft"><svg><use href="#i-shuffle"/></svg>Vaihda osa</button>
+            <button class="icon-btn" title="Tallenna"><svg><use href="#i-heart"/></svg></button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </main>
+</div>
+
+<script>
+  // Mockup-only interactions: hash routing between screens and toggling pressed states.
+  const show = () => {
+    const id = location.hash.slice(1) || "vaatekaappi";
+    document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("active", s.id === id));
+    document.body.dataset.screen = id;
+    const tab = id === "tarkistus" ? "vaatekaappi" : id;
+    document.querySelectorAll(".tab").forEach((t) =>
+      t.dataset.tab === tab ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current"));
+    window.scrollTo(0, 0);
+  };
+  addEventListener("hashchange", show);
+  show();
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button[aria-pressed]");
+    if (!b) return;
+    const group = b.closest(".filters, .suggest, .segmented");
+    if (group) {
+      group.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    } else {
+      const on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", String(on));
+      const use = b.querySelector(".heart use, use[href^='#i-heart']");
+      if (b.classList.contains("heart") && use) use.setAttribute("href", on ? "#i-heart-fill" : "#i-heart");
+    }
+  });
+</script>
+</body>
+</html>
