@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { Icon, type IconName } from "./Icon";
 import { warmUp } from "./models";
 import { Outfits } from "./Outfits";
 import { Wardrobe } from "./Wardrobe";
 
-const SCREENS = ["Vaatekaappi", "Asut"] as const;
-type Screen = (typeof SCREENS)[number];
+const SCREENS = [
+  ["Vaatekaappi", "hanger"],
+  ["Asut", "sparkle"],
+] as const satisfies readonly (readonly [string, IconName])[];
+type Screen = (typeof SCREENS)[number][0];
 
 export const App = () => {
   const [screen, setScreen] = useState<Screen>("Vaatekaappi");
@@ -13,16 +17,29 @@ export const App = () => {
   useEffect(() => {
     warmUp().catch(() => {});
   }, []);
+
   return (
-    <>
-      <nav>
-        {SCREENS.map((s) => (
-          <button key={s} aria-pressed={s === screen} onClick={() => setScreen(s)}>
-            {s}
-          </button>
-        ))}
-      </nav>
+    <div className="shell">
+      <header className="topbar">
+        <div className="brand">
+          <span className="brand-mark" />
+          Kaappi
+        </div>
+        <nav className="tabs">
+          {SCREENS.map(([name, icon]) => (
+            <button
+              key={name}
+              className="tab"
+              aria-current={name === screen ? "page" : undefined}
+              onClick={() => setScreen(name)}
+            >
+              <Icon name={icon} />
+              {name}
+            </button>
+          ))}
+        </nav>
+      </header>
       <main>{screen === "Vaatekaappi" ? <Wardrobe /> : <Outfits />}</main>
-    </>
+    </div>
   );
 };

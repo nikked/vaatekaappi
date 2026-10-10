@@ -1,0 +1,76 @@
+// Icons from mockups/index.html.
+const PATHS = {
+  hanger: (
+    <>
+      <path d="M12 7a2 2 0 1 1 2-2c0 1-2 1.5-2 3l9 6.5a1.5 1.5 0 0 1-.9 2.5H3.9a1.5 1.5 0 0 1-.9-2.5L12 8" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  sparkle: (
+    <>
+      <path d="M12 3c.6 4.2 1.8 5.4 6 6-4.2.6-5.4 1.8-6 6-.6-4.2-1.8-5.4-6-6 4.2-.6 5.4-1.8 6-6zM18.5 15c.3 2 .9 2.6 2.5 3-1.6.4-2.2 1-2.5 3-.3-2-.9-2.6-2.5-3 1.6-.4 2.2-1 2.5-3z" fill="currentColor" />
+    </>
+  ),
+  plus: (
+    <>
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </>
+  ),
+  heart: (
+    <>
+      <path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </>
+  ),
+  "heart-fill": (
+    <>
+      <path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z" fill="currentColor" />
+    </>
+  ),
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1.8" fill="currentColor" /><circle cx="12" cy="12" r="1.8" fill="currentColor" /><circle cx="19" cy="12" r="1.8" fill="currentColor" />
+    </>
+  ),
+  down: (
+    <>
+      <path d="M12 4v11m-5-5 5 5 5-5M5 20h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  up: (
+    <>
+      <path d="M12 15V4M7 9l5-5 5 5M5 20h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  back: (
+    <>
+      <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </>
+  ),
+  leaf: (
+    <>
+      <path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15zm0 0 8-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  bike: (
+    <>
+      <circle cx="6" cy="16" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.7" /><circle cx="18" cy="16" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.7" /><path d="M6 16l4-7h6l2 7M10 9l3 7h-7M14 6h3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+  shuffle: (
+    <>
+      <path d="M4 7h3c5 0 5 10 10 10h3m0 0-3-3m3 3-3 3M4 17h3c1.5 0 2.5-.8 3.3-2M20 7h-3c-1.5 0-2.5.8-3.3 2M20 7l-3-3m3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
+} as const;
+
+export type IconName = keyof typeof PATHS;
+
+export const Icon = ({ name }: { name: IconName }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    {PATHS[name]}
+  </svg>
+);

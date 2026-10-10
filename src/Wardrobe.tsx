@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { exportWardrobe, importWardrobe } from "./backup";
 import { deleteGarment, loadGarments, replaceGarments, saveGarment } from "./db";
-import { GarmentForm } from "./GarmentForm";
+import { GarmentForm, leafName, rgbCss, tintStyle } from "./GarmentForm";
+import { Icon } from "./Icon";
 import { downscale } from "./image";
 import { completeGarment, draftFromPhoto, type Draft } from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
-import type { Garment, MaybeProcessedGarment } from "./garment";
+import { isProcessed, type Garment, type MaybeProcessedGarment } from "./garment";
 
 const download = (filename: string, content: string) => {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -16,11 +17,54 @@ const download = (filename: string, content: string) => {
   URL.revokeObjectURL(url);
 };
 
-const Thumbnail = ({ garment, onClick }: { garment: Garment; onClick: () => void }) => (
-  <button className="thumb" onClick={onClick}>
-    <img src={useObjectUrl(garment.cutout)} alt={garment.name} />
-    <span>{garment.name}</span>
-  </button>
+// Top-level categories as filter chips; the rest only show under "Kaikki".
+const GROUPS = [
+  ["Yläosat", "Yläosa"],
+  ["Alaosat", "Alaosa"],
+  ["Takit", "Takit"],
+  ["Mekot", "Mekot"],
+] as const;
+type Filter = "all" | "favourites" | (typeof GROUPS)[number][1];
+
+const closeMenu = (inside: Element) => inside.closest("details")?.removeAttribute("open");
+
+const matches = (g: Garment, filter: Filter): boolean =>
+  filter === "all" ? true : filter === "favourites" ? g.favourite : g.category.split(" > ")[0] === filter;
+
+const Card = ({
+  garment,
+  onOpen,
+  onToggleFavourite,
+}: {
+  garment: Garment;
+  onOpen: () => void;
+  onToggleFavourite: () => void;
+}) => (
+  <article className="card" onClick={onOpen}>
+    <div className="photo" style={tintStyle(garment.colors)}>
+      <img src={useObjectUrl(garment.cutout)} alt={garment.name} />
+      <button
+        className="heart"
+        aria-pressed={garment.favourite}
+        title="Lempivaate"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavourite();
+        }}
+      >
+        <Icon name={garment.favourite ? "heart-fill" : "heart"} />
+      </button>
+    </div>
+    <div className="card-meta">
+      <span className="name">{garment.name || "Nimetön"}</span>
+      <span className="dots">
+        {garment.colors.map((c, i) => (
+          <span key={i} className="dot" style={{ background: rgbCss(c) }} />
+        ))}
+      </span>
+    </div>
+    <p className="card-sub">{leafName(garment.category)}</p>
+  </article>
 );
 
 // One at a time: the models share one GPU/CPU, so parallel runs aren't faster.
@@ -42,12 +86,14 @@ export const Wardrobe = () => {
   const [editing, setEditing] = useState<Garment>();
   const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
+  const [reviewing, setReviewing] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
   const loadStarted = useRef(false);
 
   const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
 
   const process = async (stored: readonly MaybeProcessedGarment[]): Promise<Garment[]> => {
-    const missing = stored.filter((g) => !g.cutout || !g.embedding).length;
+    const missing = stored.filter((g) => !isProcessed(g)).length;
     if (missing === 0) return completeAll(stored, () => {});
     setBusy(`Käsitellään vaatteita 0 / ${missing}…`);
     const done = await completeAll(stored, (n) => setBusy(`Käsitellään vaatteita ${n} / ${stored.length}…`));
@@ -62,7 +108,7 @@ export const Wardrobe = () => {
       try {
         const stored = await loadGarments();
         const complete = await process(stored);
-        if (stored.some((g) => !g.cutout || !g.embedding)) await replaceGarments(complete);
+        if (!stored.every(isProcessed)) await replaceGarments(complete);
         setGarments(complete);
       } catch (e) {
         showError(e);
@@ -88,7 +134,9 @@ export const Wardrobe = () => {
 
   const save = async (garment: Garment) => {
     await saveGarment(garment);
-    setGarments((gs) => [...gs.filter((g) => g.id !== garment.id), garment]);
+    setGarments((gs) =>
+      gs.some((g) => g.id === garment.id) ? gs.map((g) => (g.id === garment.id ? garment : g)) : [...gs, garment],
+    );
   };
 
   const importFile = async (file: File | undefined) => {
@@ -106,56 +154,54 @@ export const Wardrobe = () => {
 
   const [next] = queue;
 
-  return (
-    <>
-      <div className="toolbar">
-        <label className="button">
-          Lisää kuvia
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(e) => void addFiles(e.target.files)}
-          />
-        </label>
-        <button
-          onClick={async () => download("vaatekaappi.json", await exportWardrobe(garments))}
-          disabled={garments.length === 0}
-        >
-          Vie
-        </button>
-        <label className="button">
-          Tuo
-          <input
-            type="file"
-            accept="application/json"
-            hidden
-            onChange={(e) => void importFile(e.target.files?.[0])}
-          />
-        </label>
-        {queue.length > 0 && <span>{queue.length} tarkistettavana</span>}
-        {busy && <span className="busy">{busy}</span>}
-      </div>
-      {error && <p className="error">{error}</p>}
-
-      {next ? (
+  if (reviewing && next) {
+    return (
+      <>
+        <div className="review-top">
+          <button className="btn btn-ghost" onClick={() => setReviewing(false)}>
+            <Icon name="back" />
+            Vaatekaappi
+          </button>
+          <div className="progress">
+            <div className="progress-dots">
+              {queue.map((d, i) => (
+                <span key={d.garment.id} className={i === 0 ? "now" : undefined} />
+              ))}
+            </div>
+            {queue.length} jäljellä
+          </div>
+        </div>
         <GarmentForm
           key={next.garment.id}
           garment={next.garment}
           suggestedCategories={next.suggestedCategories}
+          queue={queue.map((d) => d.garment)}
           submitLabel="Tallenna & seuraava"
+          cancelLabel="Ohita"
           onSubmit={async (g) => {
             await save(g);
             setQueue((q) => q.slice(1));
           }}
           onCancel={() => setQueue((q) => q.slice(1))}
         />
-      ) : editing ? (
+      </>
+    );
+  }
+
+  if (editing) {
+    return (
+      <>
+        <div className="review-top">
+          <button className="btn btn-ghost" onClick={() => setEditing(undefined)}>
+            <Icon name="back" />
+            Vaatekaappi
+          </button>
+        </div>
         <GarmentForm
           key={editing.id}
           garment={editing}
           submitLabel="Tallenna"
+          cancelLabel="Peruuta"
           onSubmit={async (g) => {
             await save(g);
             setEditing(undefined);
@@ -167,11 +213,110 @@ export const Wardrobe = () => {
             setEditing(undefined);
           }}
         />
-      ) : null}
+      </>
+    );
+  }
 
+  const favourites = garments.filter((g) => g.favourite).length;
+  const shown = garments.filter((g) => matches(g, filter));
+
+  return (
+    <>
+      <div className="screen-head">
+        <div className="grow">
+          <h1>Vaatekaappi</h1>
+          <p>
+            {garments.length} vaatetta · {favourites} lempivaatetta
+          </p>
+        </div>
+        <label className="btn btn-primary" title="Lisää kuvia">
+          <Icon name="plus" />
+          <span className="add-label">Lisää kuvia</span>
+          <input type="file" accept="image/*" multiple hidden onChange={(e) => void addFiles(e.target.files)} />
+        </label>
+        <details className="menu">
+          <summary className="icon-btn" title="Lisää toimintoja">
+            <Icon name="more" />
+          </summary>
+          <div className="menu-panel">
+            <button
+              disabled={garments.length === 0}
+              onClick={async (e) => {
+                closeMenu(e.currentTarget);
+                download("vaatekaappi.json", await exportWardrobe(garments));
+              }}
+            >
+              <Icon name="down" />
+              <span>
+                Vie varmuuskopio<small>Kaikki vaatteet yhteen tiedostoon</small>
+              </span>
+            </button>
+            <label>
+              <Icon name="up" />
+              <span>
+                Tuo varmuuskopio<small>Korvaa nykyisen vaatekaapin</small>
+              </span>
+              <input
+                type="file"
+                accept="application/json"
+                hidden
+                onChange={(e) => {
+                  closeMenu(e.currentTarget);
+                  void importFile(e.target.files?.[0]);
+                }}
+              />
+            </label>
+          </div>
+        </details>
+      </div>
+
+      {error && <p className="error">{error}</p>}
+      {busy && (
+        <div className="notice">
+          <p>{busy}</p>
+        </div>
+      )}
+      {queue.length > 0 && (
+        <div className="notice">
+          <div className="stack">
+            {queue.slice(0, 3).map((d) => (
+              <span key={d.garment.id} style={{ background: rgbCss(d.garment.colors[0] ?? [200, 190, 180]) }} />
+            ))}
+          </div>
+          <p>
+            <strong>{queue.length === 1 ? "1 uusi kuva" : `${queue.length} uutta kuvaa`}</strong> odottaa
+            tarkistusta.
+          </p>
+          <button className="btn btn-soft" onClick={() => setReviewing(true)}>
+            Jatka tarkistusta
+          </button>
+        </div>
+      )}
+
+      <div className="filters">
+        <button className="chip" aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
+          Kaikki <span className="count">{garments.length}</span>
+        </button>
+        {GROUPS.map(([label, group]) => (
+          <button key={group} className="chip" aria-pressed={filter === group} onClick={() => setFilter(group)}>
+            {label} <span className="count">{garments.filter((g) => matches(g, group)).length}</span>
+          </button>
+        ))}
+        <button className="chip" aria-pressed={filter === "favourites"} onClick={() => setFilter("favourites")}>
+          <Icon name="heart-fill" />
+          Lempivaatteet
+        </button>
+      </div>
+
+      {garments.length === 0 && !busy && <p className="empty">Lisää ensimmäiset vaatteet kuvista.</p>}
       <div className="grid">
-        {garments.map((g) => (
-          <Thumbnail key={g.id} garment={g} onClick={() => setEditing(g)} />
+        {shown.map((g) => (
+          <Card
+            key={g.id}
+            garment={g}
+            onOpen={() => setEditing(g)}
+            onToggleFavourite={() => void save({ ...g, favourite: !g.favourite })}
+          />
         ))}
       </div>
     </>
