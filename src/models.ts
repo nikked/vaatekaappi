@@ -5,8 +5,10 @@ import {
   RawImage,
   SiglipTextModel,
   SiglipVisionModel,
+  type ProgressInfo,
 } from "@huggingface/transformers";
 import { isCategory, type Category, type Pattern } from "./garment";
+import { applyProgress, type Downloads } from "./downloads";
 import { flattenOnWhite, withAlpha } from "./image";
 import {
   CATEGORY_PROMPTS,
@@ -29,6 +31,28 @@ export const DERIVED_BY = `${SEGMENTER}+${EMBEDDER}+crop`;
 // Left undefined, transformers.js uses WASM in the browser and CPU in Node.
 const device = globalThis.navigator?.gpu ? "webgpu" : undefined;
 
+export type ModelStatus = { state: "loading" | "ready" | "failed"; downloads: Downloads };
+
+let status: ModelStatus = { state: "loading", downloads: new Map() };
+const listeners = new Set<() => void>();
+
+const setStatus = (next: ModelStatus) => {
+  status = next;
+  for (const listener of listeners) listener();
+};
+
+// For useSyncExternalStore: the UI shows download progress while models load.
+export const subscribeModelStatus = (listener: () => void): (() => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+export const getModelStatus = (): ModelStatus => status;
+
+const progress_callback = (info: ProgressInfo) => {
+  const downloads = applyProgress(status.downloads, info);
+  if (downloads !== status.downloads) setStatus({ ...status, downloads });
+};
+
 const once = <T>(load: () => Promise<T>): (() => Promise<T>) => {
   let loaded: Promise<T> | undefined;
   return () => (loaded ??= load());
@@ -38,8 +62,12 @@ const once = <T>(load: () => Promise<T>): (() => Promise<T>) => {
 // is loaded with the base model class and its preprocessing spelled out.
 // WebGPU fp16 takes ~0.3 s per photo; the WASM fallback ~8 s.
 const segmenter = once(async () => ({
-  model: await PreTrainedModel.from_pretrained(SEGMENTER, device ? { device, dtype: "fp16" } : { dtype: "q8" }),
+  model: await PreTrainedModel.from_pretrained(
+    SEGMENTER,
+    device ? { device, dtype: "fp16", progress_callback } : { dtype: "q8", progress_callback },
+  ),
   processor: await AutoProcessor.from_pretrained(SEGMENTER, {
+    progress_callback,
     config: {
       do_normalize: true,
       do_pad: false,
@@ -56,13 +84,13 @@ const segmenter = once(async () => ({
 }));
 
 const vision = once(async () => ({
-  processor: await AutoProcessor.from_pretrained(EMBEDDER),
-  model: await SiglipVisionModel.from_pretrained(EMBEDDER, { dtype: "q8", device }),
+  processor: await AutoProcessor.from_pretrained(EMBEDDER, { progress_callback }),
+  model: await SiglipVisionModel.from_pretrained(EMBEDDER, { dtype: "q8", device, progress_callback }),
 }));
 
 const text = once(async () => ({
-  tokenizer: await AutoTokenizer.from_pretrained(EMBEDDER),
-  model: await SiglipTextModel.from_pretrained(EMBEDDER, { dtype: "q8", device }),
+  tokenizer: await AutoTokenizer.from_pretrained(EMBEDDER, { progress_callback }),
+  model: await SiglipTextModel.from_pretrained(EMBEDDER, { dtype: "q8", device, progress_callback }),
 }));
 
 const rows = (data: Float32Array, dims: readonly number[]): number[][] => {
@@ -111,4 +139,11 @@ export const prompts = once(async (): Promise<Prompts> => {
 });
 
 /** Starts all downloads so the first photo doesn't wait for them. */
-export const warmUp = (): Promise<unknown> => Promise.all([segmenter(), vision(), prompts()]);
+export const warmUp = (): Promise<unknown> =>
+  Promise.all([segmenter(), vision(), prompts()]).then(
+    () => setStatus({ ...status, state: "ready" }),
+    (e: unknown) => {
+      setStatus({ ...status, state: "failed" });
+      throw e;
+    },
+  );
