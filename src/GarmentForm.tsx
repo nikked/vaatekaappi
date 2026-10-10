@@ -11,6 +11,7 @@ import {
   type Rgb,
 } from "./garment";
 import { Icon } from "./Icon";
+import { HelpTip } from "./Tip";
 import { useObjectUrl } from "./useObjectUrl";
 
 const MAX_COLORS = 2;
@@ -144,6 +145,7 @@ export const GarmentForm = ({
         <div>
           <div className="field-label">
             Kategoria{" "}
+            <HelpTip text="Päällysosat (sisätakit, bleiserit, neuletakit) puetaan aina yläosan päälle, joten niitä ei ehdoteta yksinään." />
             {suggestedCategories.length > 0 && (
               <small>ehdotukset kuvan perusteella</small>
             )}
@@ -207,11 +209,15 @@ export const GarmentForm = ({
               }
             />
             Ei sovellu pyöräilyyn
+            <HelpTip text="Merkitse alaosat ja mekot, joilla ei voi pyöräillä. Ne näkyvät Asut-sivulla Ei pyöräilyyn -valinnassa." />
           </label>
         )}
 
         <div>
-          <div className="field-label">Värit</div>
+          <div className="field-label">
+            Värit
+            <HelpTip text="Vaatteen päävärit. Ensimmäinen väri ratkaisee asujen pisteytyksessä. Kuvasta ehdotetut värit ovat usein liian tummia, joten korjaa tarvittaessa." />
+          </div>
           <div className="swatches">
             {draft.colors.map((c, i) => (
               <label
@@ -268,7 +274,10 @@ export const GarmentForm = ({
         </div>
 
         <div>
-          <div className="field-label">Tunnisteet</div>
+          <div className="field-label">
+            Tunnisteet
+            <HelpTip text="Arki ja juhla ratkaisevat, missä asuissa vaate näkyy. Lämmin ja viileä kertovat, kuinka lämmin vaate on päällä." />
+          </div>
           <div className="toggles">
             <Toggle
               label="yksivärinen"
