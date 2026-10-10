@@ -6,14 +6,17 @@ import {
   hexToRgb,
   mergeSimilar,
   opaquePixels,
+  type Pixels,
   rgbToHex,
   rgbToLab,
-  type Pixels,
 } from "./color";
 import type { Rgb } from "./garment";
 
 // Transparent image with an opaque garment drawn by `fill`.
-const cutout = (size: number, fill: (x: number, y: number) => [number, number, number, number] | null): Pixels => {
+const cutout = (
+  size: number,
+  fill: (x: number, y: number) => [number, number, number, number] | null,
+): Pixels => {
   const data = new Uint8ClampedArray(size * size * 4);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -40,13 +43,18 @@ describe("rgbToLab", () => {
 describe("deltaE", () => {
   it("is zero for identical colors and large for black vs white", () => {
     expect(deltaE(rgbToLab([10, 20, 30]), rgbToLab([10, 20, 30]))).toBe(0);
-    expect(deltaE(rgbToLab([0, 0, 0]), rgbToLab([255, 255, 255]))).toBeCloseTo(100, 0);
+    expect(deltaE(rgbToLab([0, 0, 0]), rgbToLab([255, 255, 255]))).toBeCloseTo(
+      100,
+      0,
+    );
   });
 });
 
 describe("opaquePixels", () => {
   it("keeps opaque pixels and drops transparent and half-transparent edge pixels", () => {
-    const pixels = cutout(3, (x) => (x === 0 ? [10, 20, 30, 255] : x === 1 ? [200, 200, 200, 120] : null));
+    const pixels = cutout(3, (x) =>
+      x === 0 ? [10, 20, 30, 255] : x === 1 ? [200, 200, 200, 120] : null,
+    );
     expect(opaquePixels(pixels)).toEqual(Array<Rgb>(3).fill([10, 20, 30]));
   });
 });
@@ -60,11 +68,17 @@ describe("dominantColors", () => {
   });
 
   it("returns fewer colors than k when the input has fewer distinct colors", () => {
-    expect(dominantColors(Array<Rgb>(10).fill([1, 2, 3]), 3)).toEqual([[1, 2, 3]]);
+    expect(dominantColors(Array<Rgb>(10).fill([1, 2, 3]), 3)).toEqual([
+      [1, 2, 3],
+    ]);
   });
 
   it("averages near-identical shades into one color", () => {
-    const shades: Rgb[] = [[100, 50, 20], [102, 52, 22], [98, 48, 18]];
+    const shades: Rgb[] = [
+      [100, 50, 20],
+      [102, 52, 22],
+      [98, 48, 18],
+    ];
     const points = [...shades, ...Array<Rgb>(3).fill([20, 120, 20])];
     expect(dominantColors(points, 2)).toContainEqual([100, 50, 20]);
   });
@@ -78,19 +92,37 @@ describe("mergeSimilar", () => {
   });
 
   it("keeps clearly different colors", () => {
-    expect(mergeSimilar([[255, 153, 0], [8, 145, 145]], 18)).toEqual([[255, 153, 0], [8, 145, 145]]);
+    expect(
+      mergeSimilar(
+        [
+          [255, 153, 0],
+          [8, 145, 145],
+        ],
+        18,
+      ),
+    ).toEqual([
+      [255, 153, 0],
+      [8, 145, 145],
+    ]);
   });
 });
 
 describe("cutoutColors", () => {
   it("suggests one color for a solid garment lit unevenly", () => {
-    const pixels = cutout(20, (x, y) => (y < 10 ? [120, 63, 105, 255] : x < 15 ? [104, 50, 90, 255] : null));
+    const pixels = cutout(20, (x, y) =>
+      y < 10 ? [120, 63, 105, 255] : x < 15 ? [104, 50, 90, 255] : null,
+    );
     expect(cutoutColors(pixels)).toHaveLength(1);
   });
 
   it("suggests both colors of a two-colored garment, largest first", () => {
-    const pixels = cutout(20, (_, y) => (y < 13 ? [150, 75, 30, 255] : [40, 60, 30, 255]));
-    expect(cutoutColors(pixels)).toEqual([[150, 75, 30], [40, 60, 30]]);
+    const pixels = cutout(20, (_, y) =>
+      y < 13 ? [150, 75, 30, 255] : [40, 60, 30, 255],
+    );
+    expect(cutoutColors(pixels)).toEqual([
+      [150, 75, 30],
+      [40, 60, 30],
+    ]);
   });
 
   it("suggests nothing for an empty cut-out", () => {

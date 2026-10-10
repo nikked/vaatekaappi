@@ -54,7 +54,8 @@
   --s-6: 32px;
   --s-7: 48px;
 
-  --shadow: 0 1px 2px rgb(74 52 38 / 0.06), 0 8px 24px -12px rgb(74 52 38 / 0.18);
+  --shadow:
+    0 1px 2px rgb(74 52 38 / 0.06), 0 8px 24px -12px rgb(74 52 38 / 0.18);
 }
 
 * {
@@ -383,7 +384,11 @@ svg {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: color-mix(in oklab, var(--tint, var(--c-sunk)) 16%, var(--c-sunk));
+  background: color-mix(
+    in oklab,
+    var(--tint, var(--c-sunk)) 16%,
+    var(--c-sunk)
+  );
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;
@@ -765,7 +770,11 @@ kbd {
   position: relative;
   aspect-ratio: 5 / 4;
   background:
-    radial-gradient(circle at 30% 20%, color-mix(in oklab, var(--c-mustard) 10%, transparent), transparent 60%),
+    radial-gradient(
+      circle at 30% 20%,
+      color-mix(in oklab, var(--c-mustard) 10%, transparent),
+      transparent 60%
+    ),
     var(--c-sunk);
 }
 .collage img {

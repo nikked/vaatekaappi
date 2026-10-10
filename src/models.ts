@@ -2,20 +2,20 @@ import {
   AutoProcessor,
   AutoTokenizer,
   PreTrainedModel,
+  type ProgressInfo,
   RawImage,
   SiglipTextModel,
   SiglipVisionModel,
-  type ProgressInfo,
 } from "@huggingface/transformers";
-import { isCategory, type Category, type Pattern } from "./garment";
 import { applyProgress, type Downloads } from "./downloads";
+import { type Category, isCategory, type Pattern } from "./garment";
 import { flattenOnWhite, withAlpha } from "./image";
 import {
   CATEGORY_PROMPTS,
-  PATTERN_PROMPTS,
-  normalize,
-  toPromptText,
   type Embedding,
+  normalize,
+  PATTERN_PROMPTS,
+  toPromptText,
 } from "./suggest";
 
 // BiRefNet (MIT) was tried first: it exceeds Apple GPUs' WebGPU limits and runs
@@ -31,7 +31,10 @@ export const DERIVED_BY = `${SEGMENTER}+${EMBEDDER}+crop`;
 // Left undefined, transformers.js uses WASM in the browser and CPU in Node.
 const device = globalThis.navigator?.gpu ? "webgpu" : undefined;
 
-export type ModelStatus = { state: "loading" | "ready" | "failed"; downloads: Downloads };
+export type ModelStatus = {
+  state: "loading" | "ready" | "failed";
+  downloads: Downloads;
+};
 
 let status: ModelStatus = { state: "loading", downloads: new Map() };
 const listeners = new Set<() => void>();
@@ -64,7 +67,9 @@ const once = <T>(load: () => Promise<T>): (() => Promise<T>) => {
 const segmenter = once(async () => ({
   model: await PreTrainedModel.from_pretrained(
     SEGMENTER,
-    device ? { device, dtype: "fp16", progress_callback } : { dtype: "q8", progress_callback },
+    device
+      ? { device, dtype: "fp16", progress_callback }
+      : { dtype: "q8", progress_callback },
   ),
   processor: await AutoProcessor.from_pretrained(SEGMENTER, {
     progress_callback,
@@ -84,18 +89,32 @@ const segmenter = once(async () => ({
 }));
 
 const vision = once(async () => ({
-  processor: await AutoProcessor.from_pretrained(EMBEDDER, { progress_callback }),
-  model: await SiglipVisionModel.from_pretrained(EMBEDDER, { dtype: "q8", device, progress_callback }),
+  processor: await AutoProcessor.from_pretrained(EMBEDDER, {
+    progress_callback,
+  }),
+  model: await SiglipVisionModel.from_pretrained(EMBEDDER, {
+    dtype: "q8",
+    device,
+    progress_callback,
+  }),
 }));
 
 const text = once(async () => ({
-  tokenizer: await AutoTokenizer.from_pretrained(EMBEDDER, { progress_callback }),
-  model: await SiglipTextModel.from_pretrained(EMBEDDER, { dtype: "q8", device, progress_callback }),
+  tokenizer: await AutoTokenizer.from_pretrained(EMBEDDER, {
+    progress_callback,
+  }),
+  model: await SiglipTextModel.from_pretrained(EMBEDDER, {
+    dtype: "q8",
+    device,
+    progress_callback,
+  }),
 }));
 
 const rows = (data: Float32Array, dims: readonly number[]): number[][] => {
   const [count = 0, size = 0] = dims;
-  return Array.from({ length: count }, (_, i) => normalize(Array.from(data.subarray(i * size, (i + 1) * size))));
+  return Array.from({ length: count }, (_, i) =>
+    normalize(Array.from(data.subarray(i * size, (i + 1) * size))),
+  );
 };
 
 /** RGBA image of the garment with the background made transparent. */
@@ -104,21 +123,36 @@ export const segment = async (input: Blob | string): Promise<RawImage> => {
   const image = await RawImage.read(input);
   const { pixel_values } = await processor(image);
   const { output } = await model({ input: pixel_values });
-  const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8")).resize(image.width, image.height);
-  return new RawImage(withAlpha(image.rgba().data, mask.data), image.width, image.height, 4);
+  const mask = await RawImage.fromTensor(output[0].mul(255).to("uint8")).resize(
+    image.width,
+    image.height,
+  );
+  return new RawImage(
+    withAlpha(image.rgba().data, mask.data),
+    image.width,
+    image.height,
+    4,
+  );
 };
 
 // Embedded on white so the backgrounds of different photos don't make them look alike.
 export const embedCutout = async (cutout: RawImage): Promise<number[]> => {
   const { processor, model } = await vision();
-  const flat = new RawImage(flattenOnWhite(cutout.rgba().data), cutout.width, cutout.height, 3);
+  const flat = new RawImage(
+    flattenOnWhite(cutout.rgba().data),
+    cutout.width,
+    cutout.height,
+    3,
+  );
   const { pooler_output } = await model(await processor(flat));
   return rows(pooler_output.data, pooler_output.dims)[0] ?? [];
 };
 
 const embedTexts = async (texts: readonly string[]): Promise<number[][]> => {
   const { tokenizer, model } = await text();
-  const { pooler_output } = await model(tokenizer([...texts], { padding: "max_length", truncation: true }));
+  const { pooler_output } = await model(
+    tokenizer([...texts], { padding: "max_length", truncation: true }),
+  );
   return rows(pooler_output.data, pooler_output.dims);
 };
 
@@ -129,7 +163,11 @@ export type Prompts = {
 
 export const prompts = once(async (): Promise<Prompts> => {
   const categories = Object.keys(CATEGORY_PROMPTS).filter(isCategory);
-  const texts = [...categories.map((c) => CATEGORY_PROMPTS[c]), PATTERN_PROMPTS.solid, PATTERN_PROMPTS.patterned];
+  const texts = [
+    ...categories.map((c) => CATEGORY_PROMPTS[c]),
+    PATTERN_PROMPTS.solid,
+    PATTERN_PROMPTS.patterned,
+  ];
   const embedded = await embedTexts(texts.map(toPromptText));
   const [solid = [], patterned = []] = embedded.slice(categories.length);
   return {

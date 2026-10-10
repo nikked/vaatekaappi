@@ -70,9 +70,16 @@ describe("migrateGarment from schema 1", () => {
   });
 
   it("maps paths that had already moved before schema 2", () => {
-    expect(migrateGarment({ ...v1, category: "Takit > Sisätakit" }).category).toBe("layer-overshirt");
-    expect(migrateGarment({ ...v1, category: "Yläosa > Pitkähihaiset > Bleiserit" }).category).toBe("layer-blazer");
-    expect(migrateGarment({ ...v1, category: "Päällysosat > Neuletakit" }).category).toBe("layer-cardigan");
+    expect(
+      migrateGarment({ ...v1, category: "Takit > Sisätakit" }).category,
+    ).toBe("layer-overshirt");
+    expect(
+      migrateGarment({ ...v1, category: "Yläosa > Pitkähihaiset > Bleiserit" })
+        .category,
+    ).toBe("layer-blazer");
+    expect(
+      migrateGarment({ ...v1, category: "Päällysosat > Neuletakit" }).category,
+    ).toBe("layer-cardigan");
   });
 });
 
@@ -95,11 +102,17 @@ describe("migrateGarment on the current schema", () => {
 
 describe("migrateGarment on unreadable input", () => {
   it("names the field that is wrong", () => {
-    expect(() => migrateGarment({ ...v2, category: "Avaruuspuvut" })).toThrow("Invalid garment field: category");
-    expect(() => migrateGarment({ ...v1, image: "nope" })).toThrow("Invalid garment field: image");
+    expect(() => migrateGarment({ ...v2, category: "Avaruuspuvut" })).toThrow(
+      "Invalid garment field: category",
+    );
+    expect(() => migrateGarment({ ...v1, image: "nope" })).toThrow(
+      "Invalid garment field: image",
+    );
   });
 
   it("rejects a schema newer than this app knows", () => {
-    expect(() => migrateGarment({ ...v2, schema: 3 })).toThrow("Invalid garment field: schema");
+    expect(() => migrateGarment({ ...v2, schema: 3 })).toThrow(
+      "Invalid garment field: schema",
+    );
   });
 });

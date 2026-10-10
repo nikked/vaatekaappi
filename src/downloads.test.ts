@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { applyProgress, megabytes, totalProgress, type Downloads } from "./downloads";
+import {
+  applyProgress,
+  type Downloads,
+  megabytes,
+  totalProgress,
+} from "./downloads";
 
 const progress = (name: string, file: string, loaded: number, total: number) =>
-  ({ status: "progress", name, file, progress: (loaded / total) * 100, loaded, total }) as const;
+  ({
+    status: "progress",
+    name,
+    file,
+    progress: (loaded / total) * 100,
+    loaded,
+    total,
+  }) as const;
 
 describe("applyProgress / totalProgress", () => {
   it("sums the latest progress of every file of every model", () => {
@@ -16,8 +28,16 @@ describe("applyProgress / totalProgress", () => {
   });
 
   it("ignores events without byte counts", () => {
-    const start: Downloads = new Map([["rmbg/model.onnx", { loaded: 1, total: 2 }]]);
-    expect(applyProgress(start, { status: "done", name: "rmbg", file: "model.onnx" })).toBe(start);
+    const start: Downloads = new Map([
+      ["rmbg/model.onnx", { loaded: 1, total: 2 }],
+    ]);
+    expect(
+      applyProgress(start, {
+        status: "done",
+        name: "rmbg",
+        file: "model.onnx",
+      }),
+    ).toBe(start);
   });
 
   it("is zero before anything downloads", () => {

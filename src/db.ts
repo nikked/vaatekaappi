@@ -12,8 +12,10 @@ const open = (): Promise<IDBDatabase> =>
     const request = indexedDB.open("wardrobe", 2);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(GARMENTS)) db.createObjectStore(GARMENTS, { keyPath: "id" });
-      if (!db.objectStoreNames.contains(SETTINGS)) db.createObjectStore(SETTINGS);
+      if (!db.objectStoreNames.contains(GARMENTS))
+        db.createObjectStore(GARMENTS, { keyPath: "id" });
+      if (!db.objectStoreNames.contains(SETTINGS))
+        db.createObjectStore(SETTINGS);
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -42,7 +44,9 @@ export type Loaded = { garments: StoredGarment[]; unreadable: number };
 // serves the database and backups alike. Records that can't be read are left
 // in the database untouched rather than dropped.
 export const loadGarments = async (): Promise<Loaded> => {
-  const raw = (await run<unknown[]>(GARMENTS, "readonly", (store) => store.getAll())) ?? [];
+  const raw =
+    (await run<unknown[]>(GARMENTS, "readonly", (store) => store.getAll())) ??
+    [];
   const garments = raw.flatMap((r) => {
     try {
       return [migrateGarment(r)];
@@ -62,7 +66,9 @@ export const deleteGarment = async (id: string): Promise<void> => {
 };
 
 // Single transaction: either the whole import lands or nothing changes.
-export const replaceGarments = async (garments: readonly StoredGarment[]): Promise<void> => {
+export const replaceGarments = async (
+  garments: readonly StoredGarment[],
+): Promise<void> => {
   await run(GARMENTS, "readwrite", (store) => {
     store.clear();
     for (const g of garments) store.put(g);
@@ -70,7 +76,9 @@ export const replaceGarments = async (garments: readonly StoredGarment[]): Promi
 };
 
 export const loadProfile = async (): Promise<Profile> => {
-  const stored: unknown = await run(SETTINGS, "readonly", (store) => store.get(PROFILE_KEY));
+  const stored: unknown = await run(SETTINGS, "readonly", (store) =>
+    store.get(PROFILE_KEY),
+  );
   return isProfile(stored) ? stored : DEFAULT_PROFILE;
 };
 

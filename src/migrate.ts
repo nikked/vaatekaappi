@@ -1,13 +1,13 @@
 import {
-  GARMENT_SCHEMA,
-  OCCASIONS,
-  PATTERNS,
-  WARMTHS,
-  isCategory,
-  isOneOf,
   type Category,
   type Derived,
+  GARMENT_SCHEMA,
+  isCategory,
+  isOneOf,
+  OCCASIONS,
+  PATTERNS,
   type StoredGarment,
+  WARMTHS,
 } from "./garment";
 import { isRgb } from "./palette";
 
@@ -48,10 +48,17 @@ const V1_CATEGORIES: Readonly<Record<string, Category>> = {
 
 // Schema 1 had no brand, material or notes, and didn't record which models made
 // the cut-out and embedding, so those are dropped and recomputed.
-const fromV1 = ({ cutout: _, embedding: __, ...v1 }: Record<string, unknown>): Record<string, unknown> => ({
+const fromV1 = ({
+  cutout: _,
+  embedding: __,
+  ...v1
+}: Record<string, unknown>): Record<string, unknown> => ({
   ...v1,
   schema: 2,
-  category: typeof v1.category === "string" ? (V1_CATEGORIES[v1.category] ?? v1.category) : v1.category,
+  category:
+    typeof v1.category === "string"
+      ? (V1_CATEGORIES[v1.category] ?? v1.category)
+      : v1.category,
   brand: "",
   material: "",
   notes: "",
@@ -90,11 +97,16 @@ const parseCurrent = (r: Record<string, unknown>): StoredGarment => {
     material: string(r, "material"),
     notes: string(r, "notes"),
     category: isCategory(category) ? category : fail("category"),
-    colors: Array.isArray(colors) && colors.every(isRgb) ? colors : fail("colors"),
+    colors:
+      Array.isArray(colors) && colors.every(isRgb) ? colors : fail("colors"),
     pattern: isOneOf(PATTERNS)(pattern) ? pattern : fail("pattern"),
     occasions:
-      Array.isArray(occasions) && occasions.every(isOneOf(OCCASIONS)) ? occasions : fail("occasions"),
-    ...(warmth === undefined ? {} : { warmth: isOneOf(WARMTHS)(warmth) ? warmth : fail("warmth") }),
+      Array.isArray(occasions) && occasions.every(isOneOf(OCCASIONS))
+        ? occasions
+        : fail("occasions"),
+    ...(warmth === undefined
+      ? {}
+      : { warmth: isOneOf(WARMTHS)(warmth) ? warmth : fail("warmth") }),
     bikeable: boolean(r, "bikeable"),
     favourite: boolean(r, "favourite"),
     ...derived(r),

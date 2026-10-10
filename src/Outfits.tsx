@@ -1,25 +1,20 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { loadGarments, loadProfile } from "./db";
-import {
-  type Garment,
-  type Occasion,
-  type Slot,
-  type Warmth,
-} from "./garment";
 import { rgbCss } from "./GarmentForm";
-import { isUpToDate } from "./photo";
+import type { Garment, Occasion, Slot, Warmth } from "./garment";
 import { Icon, type IconName } from "./Icon";
 import {
-  SCORE_DOTS,
   fitsFilter,
+  type OutfitFilter,
   rankOutfits,
+  SCORE_DOTS,
   scoreDots,
   scoreOutfit,
   slotOf,
   withSlot,
-  type OutfitFilter,
 } from "./outfit";
 import { DEFAULT_PROFILE, SEASON_LABELS } from "./palette";
+import { isUpToDate } from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
 
 const OCCASIONS: readonly [Occasion, string][] = [

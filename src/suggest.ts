@@ -1,4 +1,4 @@
-import { PATTERNS, type Category, type Pattern } from "./garment";
+import { type Category, PATTERNS, type Pattern } from "./garment";
 
 export type Embedding = readonly number[];
 
@@ -40,7 +40,8 @@ export const toPromptText = (prompt: string): string => `a photo of ${prompt}`;
 // text prompts. With few examples the prompts dominate.
 export const EXAMPLES_FOR_EQUAL_WEIGHT = 20;
 
-const dot = (a: Embedding, b: Embedding): number => a.reduce((s, v, i) => s + v * (b[i] ?? 0), 0);
+const dot = (a: Embedding, b: Embedding): number =>
+  a.reduce((s, v, i) => s + v * (b[i] ?? 0), 0);
 
 export const normalize = (v: Embedding): number[] => {
   const length = Math.sqrt(dot(v, v));
@@ -54,7 +55,9 @@ export const similarity = dot;
 // signal is standardized across categories before blending.
 const standardize = (values: readonly number[]): number[] => {
   const mean = values.reduce((s, v) => s + v, 0) / values.length;
-  const sd = Math.sqrt(values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length);
+  const sd = Math.sqrt(
+    values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length,
+  );
   return values.map((v) => (sd === 0 ? 0 : (v - mean) / sd));
 };
 
@@ -63,7 +66,9 @@ const nearestExample = (
   category: Category,
   examples: readonly LabelledEmbedding[],
 ): number | undefined => {
-  const sims = examples.filter((e) => e.category === category).map((e) => similarity(image, e.embedding));
+  const sims = examples
+    .filter((e) => e.category === category)
+    .map((e) => similarity(image, e.embedding));
   return sims.length === 0 ? undefined : Math.max(...sims);
 };
 
@@ -73,7 +78,9 @@ export const rankCategories = (
   examples: readonly LabelledEmbedding[],
 ): Category[] => {
   const categories = [...prompts.keys()];
-  const textScores = standardize([...prompts.values()].map((p) => similarity(image, p)));
+  const textScores = standardize(
+    [...prompts.values()].map((p) => similarity(image, p)),
+  );
 
   const nearest = categories.map((c) => nearestExample(image, c, examples));
   const known = nearest.filter((n) => n !== undefined);
@@ -81,8 +88,10 @@ export const rankCategories = (
   const floor = known.length === 0 ? 0 : Math.min(...known);
   const exampleScores = standardize(nearest.map((n) => n ?? floor));
 
-  const weight = examples.length / (examples.length + EXAMPLES_FOR_EQUAL_WEIGHT);
-  const score = (i: number) => (1 - weight) * (textScores[i] ?? 0) + weight * (exampleScores[i] ?? 0);
+  const weight =
+    examples.length / (examples.length + EXAMPLES_FOR_EQUAL_WEIGHT);
+  const score = (i: number) =>
+    (1 - weight) * (textScores[i] ?? 0) + weight * (exampleScores[i] ?? 0);
   return categories
     .map((category, i) => ({ category, score: score(i) }))
     .sort((a, b) => b.score - a.score)
@@ -93,4 +102,6 @@ export const suggestPattern = (
   image: Embedding,
   prompts: Readonly<Record<Pattern, Embedding>>,
 ): Pattern =>
-  PATTERNS.reduce((best, p) => (similarity(image, prompts[p]) > similarity(image, prompts[best]) ? p : best));
+  PATTERNS.reduce((best, p) =>
+    similarity(image, prompts[p]) > similarity(image, prompts[best]) ? p : best,
+  );
