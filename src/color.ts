@@ -124,7 +124,8 @@ export const mergeSimilar = (
     (kept, c) =>
       kept.some((k) => deltaE(rgbToLab(k), rgbToLab(c)) < maxDeltaE)
         ? kept
-        : [...kept, c],
+        : // biome-ignore lint/performance/noAccumulatingSpread: at most a few colors; kept immutable
+          [...kept, c],
     [],
   );
 

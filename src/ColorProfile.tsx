@@ -56,6 +56,7 @@ export const ColorProfile = () => {
               <div className="suggest">
                 {seasons.map((season) => (
                   <button
+                    type="button"
                     key={season}
                     className="chip"
                     aria-pressed={profile.season === season}
@@ -79,6 +80,7 @@ export const ColorProfile = () => {
         <div className="swatches">
           {profile.palette.map((c, i) => (
             <label
+              // biome-ignore lint/suspicious/noArrayIndexKey: a palette can hold the same color twice
               key={i}
               className="swatch"
               style={{ background: rgbCss(c) }}
@@ -121,6 +123,7 @@ export const ColorProfile = () => {
         </div>
         <div className="outfit-actions">
           <button
+            type="button"
             className="btn btn-soft"
             onClick={() => update(profileFor(profile.season))}
           >

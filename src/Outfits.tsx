@@ -73,6 +73,7 @@ const Score = ({ dots }: { dots: number }) => (
     <span className="score-label">Sopivuus</span>
     <span className="score-dots">
       {Array.from({ length: SCORE_DOTS }, (_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: a fixed row of five dots
         <span key={i} className={i < dots ? "on" : undefined} />
       ))}
     </span>
@@ -191,6 +192,7 @@ export const Outfits = () => {
           <div className="segmented">
             {OCCASIONS.map(([value, label]) => (
               <button
+                type="button"
                 key={value}
                 aria-pressed={filter.occasion === value}
                 onClick={() => update({ occasion: value })}
@@ -205,6 +207,7 @@ export const Outfits = () => {
           <div className="segmented">
             {WEATHERS.map(([value, label, icon]) => (
               <button
+                type="button"
                 key={value}
                 aria-pressed={filter.weather === value}
                 onClick={() => update({ weather: value })}
@@ -217,6 +220,7 @@ export const Outfits = () => {
         </div>
         <div className="picker">
           <button
+            type="button"
             className="switch"
             aria-pressed={filter.cycling}
             onClick={() => update({ cycling: !filter.cycling })}
@@ -271,6 +275,7 @@ export const Outfits = () => {
                 <div className="outfit-actions">
                   {isEditing ? (
                     <button
+                      type="button"
                       className="btn btn-soft"
                       onClick={() => setEditing(undefined)}
                     >
@@ -278,6 +283,7 @@ export const Outfits = () => {
                     </button>
                   ) : (
                     <button
+                      type="button"
                       className="btn btn-soft"
                       onClick={() => setEditing({ key, outfit })}
                     >

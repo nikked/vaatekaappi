@@ -348,7 +348,10 @@ describe("rankOutfits", () => {
       ["rust-top", "orange-skirt"],
       ["green-top", "orange-skirt"],
     ]);
-    expect(ranked[0]!.score).toBeGreaterThan(ranked[1]!.score);
+    const [best, next] = ranked;
+    expect(best?.score).toBeGreaterThan(
+      next?.score ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it("does not prefer adding a matching coat over the same outfit without it", () => {
@@ -358,7 +361,7 @@ describe("rankOutfits", () => {
       garment("rust-coat", COAT, RUST),
     ];
     const [first, second] = rankOutfits(wardrobe, everydayCool, WARM_AUTUMN);
-    expect(first!.score).toBeCloseTo(second!.score, 1);
+    expect(first?.score).toBeCloseTo(second?.score ?? Number.NaN, 1);
   });
 
   it("drops garments that don't fit the filter", () => {

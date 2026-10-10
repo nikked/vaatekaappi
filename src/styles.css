@@ -1141,3 +1141,13 @@ kbd {
   width: 32px;
   height: 32px;
 }
+.card-open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
