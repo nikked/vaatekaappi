@@ -5,12 +5,15 @@ import type { Garment } from "./garment";
 const garment = (id: string, bytes: number[]): Garment => ({
   id,
   image: new Blob([new Uint8Array(bytes)], { type: "image/png" }),
-  category: "sweater",
-  colors: [[150, 75, 30]],
-  colorsUncertain: false,
-  season: ["autumn", "winter"],
-  formality: "casual",
+  name: "Liila neulepaita",
+  description: "Lämmin pörröinen neulepaita",
+  category: "Yläosa > Pitkähihaiset > Neulepaidat",
+  colors: [[204, 153, 255]],
   pattern: "solid",
+  occasions: ["everyday", "party"],
+  warmth: "warm",
+  bikeable: false,
+  favourite: true,
 });
 
 describe("export → import", () => {
@@ -37,7 +40,7 @@ describe("importWardrobe", () => {
 
   it("rejects a garment with an unknown category", async () => {
     const json = await exportWardrobe([garment("a", [1])]);
-    await expect(importWardrobe(json.replace("sweater", "spacesuit"))).rejects.toThrow(
+    await expect(importWardrobe(json.replace("Neulepaidat", "Avaruuspuvut"))).rejects.toThrow(
       "Invalid garment at index 0",
     );
   });

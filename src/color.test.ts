@@ -4,6 +4,8 @@ import {
   dominantColors,
   estimateBackground,
   extractColors,
+  hexToRgb,
+  rgbToHex,
   rgbToLab,
   type Pixels,
 } from "./color";
@@ -104,5 +106,18 @@ describe("extractColors", () => {
       inside(x, y, size, 3) ? [243, 244, 245] : null,
     );
     expect(extractColors(pixels)).toEqual({ colors: [], uncertain: true });
+  });
+});
+
+describe("hex conversion", () => {
+  it("round-trips through hex", () => {
+    expect(rgbToHex([204, 153, 255])).toBe("#cc99ff");
+    expect(hexToRgb("#CC99FF")).toEqual([204, 153, 255]);
+    expect(hexToRgb(rgbToHex([0, 8, 255]))).toEqual([0, 8, 255]);
+  });
+
+  it("rejects malformed hex like the double hash in the source data", () => {
+    expect(hexToRgb("##cc99ff")).toBeUndefined();
+    expect(hexToRgb("#fff")).toBeUndefined();
   });
 });

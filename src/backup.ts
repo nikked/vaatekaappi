@@ -1,7 +1,7 @@
 import {
-  FORMALITIES,
+  OCCASIONS,
   PATTERNS,
-  SEASONS,
+  WARMTHS,
   isCategory,
   isOneOf,
   type Garment,
@@ -41,16 +41,19 @@ const isRgb = (value: unknown): value is Rgb =>
 const isExportedGarment = (value: unknown): value is ExportedGarment =>
   isRecord(value) &&
   typeof value.id === "string" &&
+  typeof value.name === "string" &&
+  typeof value.description === "string" &&
   typeof value.image === "string" &&
   value.image.startsWith("data:") &&
   isCategory(value.category) &&
   Array.isArray(value.colors) &&
   value.colors.every(isRgb) &&
-  typeof value.colorsUncertain === "boolean" &&
-  Array.isArray(value.season) &&
-  value.season.every(isOneOf(SEASONS)) &&
-  isOneOf(FORMALITIES)(value.formality) &&
-  isOneOf(PATTERNS)(value.pattern);
+  isOneOf(PATTERNS)(value.pattern) &&
+  Array.isArray(value.occasions) &&
+  value.occasions.every(isOneOf(OCCASIONS)) &&
+  (value.warmth === undefined || isOneOf(WARMTHS)(value.warmth)) &&
+  typeof value.bikeable === "boolean" &&
+  typeof value.favourite === "boolean";
 
 // Throws on anything that isn't a valid export, so a bad file never replaces the wardrobe.
 export const importWardrobe = async (json: string): Promise<Garment[]> => {
