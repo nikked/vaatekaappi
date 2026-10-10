@@ -1,0 +1,52 @@
+name: ci
+run-name: ci
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  Type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Run type-check
+        run: make tc
+
+  Run-Tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Run tests
+        run: make test
+
+  Run-Linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Run linter
+        run: make lint-check
+
+  Check-Formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: "npm"
+      - name: Check formatting
+        run: make format-check
