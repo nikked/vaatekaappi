@@ -871,16 +871,25 @@ kbd {
 }
 .score {
   display: flex;
-  gap: 4px;
-  padding-top: 5px;
+  align-items: center;
+  gap: var(--s-2);
+  white-space: nowrap;
 }
-.score span {
+.score-label {
+  color: var(--c-text-soft);
+  font-size: var(--fs-sm);
+}
+.score-dots {
+  display: flex;
+  gap: 4px;
+}
+.score-dots span {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--c-line);
 }
-.score .on {
+.score-dots .on {
   background: var(--c-terracotta);
 }
 .outfit-actions {
