@@ -1151,3 +1151,7 @@ kbd {
   color: inherit;
   text-align: left;
 }
+.outfit-count {
+  font-weight: 700;
+  color: var(--c-text);
+}
