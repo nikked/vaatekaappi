@@ -11,7 +11,9 @@ import {
   pairScore,
   paletteDistance,
   rankOutfits,
+  scoreDots,
   scoreOutfit,
+  withSlot,
   type OutfitFilter,
 } from "./outfit";
 import { WARM_AUTUMN } from "./palette";
@@ -322,5 +324,41 @@ describe("rankOutfits", () => {
 
   it("returns nothing for an empty wardrobe", () => {
     expect(rankOutfits([], everydayCool)).toEqual([]);
+  });
+});
+
+describe("withSlot", () => {
+  const top = garment("t", TEE);
+  const bottom = garment("b", TROUSERS);
+
+  it("replaces the garment in a slot", () => {
+    expect(ids([withSlot([top, bottom], "bottom", garment("s", SKIRT))])).toEqual([["s", "t"]]);
+  });
+
+  it("adds to an empty slot and removes with undefined", () => {
+    const coat = garment("c", COAT);
+    expect(ids([withSlot([top, bottom], "outer", coat)])).toEqual([["b", "c", "t"]]);
+    expect(ids([withSlot([top, bottom, coat], "outer", undefined)])).toEqual([["b", "t"]]);
+  });
+});
+
+describe("scoreDots", () => {
+  it("maps the best outfit to 5 dots and the worst to 1", () => {
+    expect(scoreDots(1, 1, -3)).toBe(5);
+    expect(scoreDots(-3, 1, -3)).toBe(1);
+    expect(scoreDots(-1, 1, -3)).toBe(3);
+  });
+
+  it("gives full dots when all outfits score the same", () => {
+    expect(scoreDots(0.5, 0.5, 0.5)).toBe(5);
+  });
+
+  it("keeps nearly equal outfits nearly equal in a short list", () => {
+    expect(scoreDots(-0.32, -0.14, -0.32)).toBe(5);
+  });
+
+  it("clamps scores outside the listed range", () => {
+    expect(scoreDots(3, 1, -3)).toBe(5);
+    expect(scoreDots(-9, 1, -3)).toBe(1);
   });
 });

@@ -60,6 +60,9 @@ export type Garment = {
 export type MaybeProcessedGarment = Omit<Garment, "cutout" | "embedding"> &
   Partial<Pick<Garment, "cutout" | "embedding">>;
 
+export const isProcessed = (g: MaybeProcessedGarment): g is Garment =>
+  g.cutout !== undefined && g.embedding !== undefined;
+
 export const isCategory = (value: unknown): value is Category =>
   typeof value === "string" && Object.hasOwn(CATEGORIES, value);
 
