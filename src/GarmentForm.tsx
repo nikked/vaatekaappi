@@ -8,6 +8,7 @@ import {
   WARMTHS,
   isCategory,
   isOneOf,
+  type Category,
   type Garment,
   type Occasion,
   type Pattern,
@@ -21,15 +22,23 @@ const MAX_COLORS = 2;
 
 type Props = {
   garment: Garment;
+  suggestedCategories?: readonly Category[];
   submitLabel: string;
   onSubmit: (garment: Garment) => void;
   onCancel: () => void;
   onDelete?: () => void;
 };
 
-export const GarmentForm = ({ garment, submitLabel, onSubmit, onCancel, onDelete }: Props) => {
+export const GarmentForm = ({
+  garment,
+  suggestedCategories = [],
+  submitLabel,
+  onSubmit,
+  onCancel,
+  onDelete,
+}: Props) => {
   const [draft, setDraft] = useState(garment);
-  const imageUrl = useObjectUrl(garment.image);
+  const imageUrl = useObjectUrl(garment.cutout);
 
   return (
     <form
@@ -57,6 +66,21 @@ export const GarmentForm = ({ garment, submitLabel, onSubmit, onCancel, onDelete
             onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           />
         </label>
+
+        {suggestedCategories.length > 0 && (
+          <div className="suggestions">
+            {suggestedCategories.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={draft.category === c}
+                onClick={() => setDraft({ ...draft, category: c })}
+              >
+                {c.split(" > ").at(-1)}
+              </button>
+            ))}
+          </div>
+        )}
 
         <label>
           Kategoria

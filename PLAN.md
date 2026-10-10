@@ -26,7 +26,8 @@ photo-based try-on, profile photos.
 | Outfits     | Fixed templates, hard filters, palette + color-theory ranking       |
 | Palette     | Warm autumn, fixed palette constant                                 |
 | Dress me    | v1: flat-lay collage. Photo try-on decided after spike, not in v1   |
-| Embeddings  | `Xenova/clip-vit-base-patch32` via transformers.js (WebGPU)         |
+| Embeddings  | `Xenova/siglip-base-patch16-224` q8 via transformers.js (WebGPU)    |
+| Cut-outs    | `briaai/RMBG-1.4`: WebGPU fp16, WASM q8 fallback (personal use only) |
 | Backup      | Export/import single JSON file, images as data URLs                 |
 | Name        | Kaappi                                                              |
 | Design      | Mockup as is: `mockups/index.html` (cream, terracotta, Fraunces)    |
@@ -115,11 +116,10 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 - Convert the 7 HEIC photos once to JPEG with macOS `sips`.
 - Replace placeholder categories and fields in `garment.ts` with the model above.
 
-### 1. Recognize and prefill
-- Background removal: on add, a segmentation model via transformers.js cuts the
-  garment out once; the cut-out (PNG with alpha) is stored next to the
-  original. Pick the model when building it (check its license fits personal
-  use).
+### 1. Recognize and prefill (done)
+- Background removal: on add, RMBG-1.4 cuts the garment out once; the cut-out
+  (PNG with alpha) is stored next to the original. BiRefNet-lite (MIT) was
+  tried first: it exceeds Apple GPUs' WebGPU limits and runs out of WASM memory.
 - Load the models at app start so it is warm before the first upload; cache it in
   the browser after first download.
 - Category: compute embedding on drop. Zero-shot similarity against a text
@@ -135,6 +135,11 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 - **Verify:** held-out accuracy per attribute on labelled examples (also try
   `Xenova/siglip-base-patch16-224` and keep the better one); time from drop to
   suggestions on the M1 Air; unit tests for masking and color clustering.
+- **Result (M5, headless Brave):** SigLIP 6/7 categories first, 7/7 in top 3
+  (CLIP 4/7); pattern 7/7. ~1.4 s from photo to suggestions once models are
+  loaded; first load downloads ~300 MB. Suggested colors are darker than the
+  user's picks (indoor lighting), so the color picker stays essential. Not yet
+  measured on the M1 Air.
 
 ### 2. Outfits (logic done, UI and collage to do)
 All pure functions over `Garment[]`:

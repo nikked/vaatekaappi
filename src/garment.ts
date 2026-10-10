@@ -45,6 +45,8 @@ export type Garment = {
   name: string;
   description: string;
   image: Blob;
+  cutout: Blob; // PNG with the background removed
+  embedding: number[]; // SigLIP image embedding of the cut-out, normalized
   category: Category;
   colors: Rgb[];
   pattern: Pattern;
@@ -53,6 +55,10 @@ export type Garment = {
   bikeable: boolean;
   favourite: boolean;
 };
+
+// As stored or imported before the models have added the cut-out and embedding.
+export type MaybeProcessedGarment = Omit<Garment, "cutout" | "embedding"> &
+  Partial<Pick<Garment, "cutout" | "embedding">>;
 
 export const isCategory = (value: unknown): value is Category =>
   typeof value === "string" && Object.hasOwn(CATEGORIES, value);

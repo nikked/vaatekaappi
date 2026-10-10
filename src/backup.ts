@@ -5,10 +5,18 @@ import {
   isCategory,
   isOneOf,
   type Garment,
+  type MaybeProcessedGarment,
   type Rgb,
 } from "./garment";
 
-type ExportedGarment = Omit<Garment, "image"> & { image: string };
+// Cut-out and embedding are optional so the hand-made example file imports;
+// the app computes them on import.
+type ExportedGarment = Omit<Garment, "image" | "cutout" | "embedding"> & {
+  image: string;
+  cutout?: string;
+  embedding?: number[];
+};
+
 type ExportFile = { version: 1; garments: ExportedGarment[] };
 
 const toDataUrl = async (blob: Blob): Promise<string> => {
@@ -24,7 +32,11 @@ export const exportWardrobe = async (garments: readonly Garment[]): Promise<stri
   const file: ExportFile = {
     version: 1,
     garments: await Promise.all(
-      garments.map(async (g) => ({ ...g, image: await toDataUrl(g.image) })),
+      garments.map(async (g) => ({
+        ...g,
+        image: await toDataUrl(g.image),
+        cutout: await toDataUrl(g.cutout),
+      })),
     ),
   };
   return JSON.stringify(file);
@@ -45,6 +57,9 @@ const isExportedGarment = (value: unknown): value is ExportedGarment =>
   typeof value.description === "string" &&
   typeof value.image === "string" &&
   value.image.startsWith("data:") &&
+  (value.cutout === undefined || (typeof value.cutout === "string" && value.cutout.startsWith("data:"))) &&
+  (value.embedding === undefined ||
+    (Array.isArray(value.embedding) && value.embedding.every((x) => typeof x === "number"))) &&
   isCategory(value.category) &&
   Array.isArray(value.colors) &&
   value.colors.every(isRgb) &&
@@ -56,7 +71,7 @@ const isExportedGarment = (value: unknown): value is ExportedGarment =>
   typeof value.favourite === "boolean";
 
 // Throws on anything that isn't a valid export, so a bad file never replaces the wardrobe.
-export const importWardrobe = async (json: string): Promise<Garment[]> => {
+export const importWardrobe = async (json: string): Promise<MaybeProcessedGarment[]> => {
   const parsed: unknown = JSON.parse(json);
   if (!isRecord(parsed) || parsed.version !== 1 || !Array.isArray(parsed.garments)) {
     throw new Error("Not a wardrobe export file");
@@ -64,5 +79,11 @@ export const importWardrobe = async (json: string): Promise<Garment[]> => {
   const invalid = parsed.garments.findIndex((g) => !isExportedGarment(g));
   if (invalid !== -1) throw new Error(`Invalid garment at index ${invalid}`);
   const garments: ExportedGarment[] = parsed.garments.filter(isExportedGarment);
-  return Promise.all(garments.map(async (g) => ({ ...g, image: await fromDataUrl(g.image) })));
+  return Promise.all(
+    garments.map(async ({ cutout, ...g }) => ({
+      ...g,
+      image: await fromDataUrl(g.image),
+      ...(cutout === undefined ? {} : { cutout: await fromDataUrl(cutout) }),
+    })),
+  );
 };

@@ -48,6 +48,8 @@ const garment = (
   name: id,
   description: "",
   image: new Blob(),
+  cutout: new Blob(),
+  embedding: [],
   category,
   colors: color ? [color] : [],
   pattern: "solid",

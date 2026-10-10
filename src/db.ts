@@ -1,4 +1,4 @@
-import type { Garment } from "./garment";
+import type { Garment, MaybeProcessedGarment } from "./garment";
 
 const STORE = "garments";
 
@@ -26,8 +26,8 @@ const run = async <T>(
   });
 };
 
-export const loadGarments = async (): Promise<Garment[]> =>
-  (await run<Garment[]>("readonly", (store) => store.getAll())) ?? [];
+export const loadGarments = async (): Promise<MaybeProcessedGarment[]> =>
+  (await run<MaybeProcessedGarment[]>("readonly", (store) => store.getAll())) ?? [];
 
 export const saveGarment = async (garment: Garment): Promise<void> => {
   await run("readwrite", (store) => store.put(garment));

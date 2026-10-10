@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { warmUp } from "./models";
 import { Outfits } from "./Outfits";
 import { Wardrobe } from "./Wardrobe";
 
@@ -7,6 +8,11 @@ type Screen = (typeof SCREENS)[number];
 
 export const App = () => {
   const [screen, setScreen] = useState<Screen>("Vaatekaappi");
+
+  // A failed download surfaces when a photo is processed, so it isn't reported here.
+  useEffect(() => {
+    warmUp().catch(() => {});
+  }, []);
   return (
     <>
       <nav>
