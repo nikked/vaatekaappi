@@ -21,6 +21,7 @@ const download = (filename: string, content: string) => {
 const GROUPS = [
   ["Yläosat", "Yläosa"],
   ["Alaosat", "Alaosa"],
+  ["Päällysosat", "Päällysosat"],
   ["Takit", "Takit"],
   ["Mekot", "Mekot"],
 ] as const;

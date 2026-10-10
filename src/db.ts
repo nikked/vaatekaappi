@@ -1,4 +1,4 @@
-import type { Garment, MaybeProcessedGarment } from "./garment";
+import { currentCategory, isCategory, type Garment, type MaybeProcessedGarment } from "./garment";
 
 const STORE = "garments";
 
@@ -26,8 +26,13 @@ const run = async <T>(
   });
 };
 
+// Migrated on every read rather than rewritten in place: cheap, and the new
+// path is stored the next time the garment is saved.
 export const loadGarments = async (): Promise<MaybeProcessedGarment[]> =>
-  (await run<MaybeProcessedGarment[]>("readonly", (store) => store.getAll())) ?? [];
+  ((await run<MaybeProcessedGarment[]>("readonly", (store) => store.getAll())) ?? []).map((g) => {
+    const category = currentCategory(g.category);
+    return isCategory(category) ? { ...g, category } : g;
+  });
 
 export const saveGarment = async (garment: Garment): Promise<void> => {
   await run("readwrite", (store) => store.put(garment));

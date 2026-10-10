@@ -25,7 +25,7 @@ const WEATHERS: readonly [Warmth, string, IconName][] = [
   ["cool", "Viileä", "leaf"],
 ];
 const SLOT_ORDER: readonly Slot[] = ["outer", "top", "dress", "bottom"];
-const SLOT_LABELS: Record<Slot, string> = { outer: "Takki", top: "Yläosa", dress: "Mekko", bottom: "Alaosa" };
+const SLOT_LABELS: Record<Slot, string> = { outer: "Päällysosa tai takki", top: "Yläosa", dress: "Mekko", bottom: "Alaosa" };
 const MAX_SHOWN = 20;
 
 const bySlot = (outfit: readonly Garment[]): Garment[] =>
@@ -81,7 +81,7 @@ const SwapFields = ({
           value={outfit.find((g) => slotOf(g) === slot)?.id ?? ""}
           onChange={(e) => onChange(withSlot(outfit, slot, candidates.find((g) => g.id === e.target.value)))}
         >
-          {slot === "outer" && <option value="">Ei takkia</option>}
+          {slot === "outer" && <option value="">Ei mitään</option>}
           {candidates
             .filter((g) => slotOf(g) === slot)
             .map((g) => (

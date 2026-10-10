@@ -93,7 +93,7 @@ describe("generateOutfits", () => {
   });
 
   it("never uses a blazer as the only top: it needs a shirt under it", () => {
-    const wardrobe = [garment("bl", "Yläosa > Pitkähihaiset > Bleiserit"), garment("b", TROUSERS)];
+    const wardrobe = [garment("bl", "Päällysosat > Bleiserit"), garment("b", TROUSERS)];
     expect(generateOutfits(wardrobe)).toEqual([]);
     expect(ids(generateOutfits([...wardrobe, garment("t", TEE)]))).toEqual([
       ["b", "t"],
