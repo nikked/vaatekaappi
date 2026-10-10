@@ -676,9 +676,16 @@ kbd {
   gap: var(--s-3);
 }
 .picker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--c-text-soft);
   font-weight: 600;
   font-size: var(--fs-sm);
+}
+.picker-label svg {
+  width: 16px;
+  height: 16px;
 }
 .segmented {
   display: flex;
@@ -705,46 +712,6 @@ kbd {
   background: var(--c-surface);
   color: var(--c-text);
   box-shadow: var(--shadow);
-}
-.switch {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  font-weight: 600;
-  border: 0;
-  background: none;
-  padding: 0;
-}
-.switch .track {
-  width: 44px;
-  height: 26px;
-  border-radius: var(--r-pill);
-  background: var(--c-line);
-  position: relative;
-  transition: background 0.2s;
-}
-.switch .track::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--c-surface);
-  box-shadow: 0 1px 3px rgb(74 52 38 / 0.3);
-  transition: transform 0.2s;
-}
-.switch[aria-pressed="true"] .track {
-  background: var(--c-teal);
-}
-.switch[aria-pressed="true"] .track::after {
-  transform: translateX(18px);
-}
-.switch svg {
-  width: 18px;
-  height: 18px;
-  color: var(--c-text-soft);
 }
 .outfits {
   display: grid;
@@ -1032,7 +999,15 @@ kbd {
     padding: var(--s-4);
   }
   .picker {
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--s-2);
+  }
+  .segmented button {
+    flex: 1;
+    justify-content: center;
+    padding: 7px var(--s-2);
+    white-space: nowrap;
   }
   .outfits {
     grid-template-columns: 1fr;

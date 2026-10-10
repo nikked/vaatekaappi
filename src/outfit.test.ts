@@ -7,6 +7,7 @@ import {
   generateOutfits,
   hasAtMostOnePattern,
   hueDistance,
+  isBikeable,
   labToLch,
   type OutfitFilter,
   pairScore,
@@ -69,7 +70,7 @@ const garment = (
 const ids = (outfits: readonly (readonly Garment[])[]): string[][] =>
   outfits.map((o) => o.map((g) => g.id).sort());
 
-const everyday: OutfitFilter = { occasion: "everyday", cycling: false };
+const everyday: OutfitFilter = { occasion: "everyday", cycling: "any" };
 
 describe("generateOutfits", () => {
   it("fills top + bottom, with and without each outer", () => {
@@ -142,14 +143,20 @@ describe("fitsFilter", () => {
       fitsFilter(garment("a", TEE, GREY, { occasions: ["party"] }), everyday),
     ).toBe(false);
   });
+});
 
-  it("requires bikeable bottoms when cycling, and only bottoms", () => {
-    const cycling: OutfitFilter = { ...everyday, cycling: true };
+describe("isBikeable", () => {
+  it("depends on the bottom or dress, not on tops and layers", () => {
+    const top = garment("t", TEE);
+    const coat = garment("c", COAT);
     expect(
-      fitsFilter(garment("s", SKIRT, GREY, { bikeable: true }), cycling),
+      isBikeable([top, coat, garment("s", SKIRT, GREY, { bikeable: true })]),
     ).toBe(true);
-    expect(fitsFilter(garment("s", SKIRT), cycling)).toBe(false);
-    expect(fitsFilter(garment("t", TEE), cycling)).toBe(true);
+    expect(isBikeable([top, garment("s", SKIRT)])).toBe(false);
+    expect(
+      isBikeable([garment("d", DRESS, GREY, { bikeable: true }), coat]),
+    ).toBe(true);
+    expect(isBikeable([garment("d", DRESS)])).toBe(false);
   });
 });
 
@@ -372,6 +379,21 @@ describe("rankOutfits", () => {
       rankOutfits(wardrobe, everyday, palette)[0]?.garmentIds[0];
     expect(first(WARM_AUTUMN)).toBe("rust-top");
     expect(first([COBALT, BLACK])).toBe("cobalt-top");
+  });
+
+  it("shows only bikeable outfits, or only the ones that aren't", () => {
+    const wardrobe = [
+      garment("top", TEE),
+      garment("bike-skirt", SKIRT, GREY, { bikeable: true }),
+      garment("long-skirt", SKIRT),
+    ];
+    const bottoms = (cycling: OutfitFilter["cycling"]) =>
+      rankOutfits(wardrobe, { ...everyday, cycling }, WARM_AUTUMN).map(
+        (o) => o.garmentIds[1],
+      );
+    expect(bottoms("bikeable")).toEqual(["bike-skirt"]);
+    expect(bottoms("unbikeable")).toEqual(["long-skirt"]);
+    expect(bottoms("any").sort()).toEqual(["bike-skirt", "long-skirt"]);
   });
 
   it("returns nothing for an empty wardrobe", () => {

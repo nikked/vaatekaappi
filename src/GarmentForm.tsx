@@ -286,7 +286,8 @@ export const GarmentForm = ({
               on={draft.warmth === "cool"}
               onClick={() => toggleWarmth("cool")}
             />
-            {CATEGORIES[draft.category].slot === "bottom" && (
+            {(CATEGORIES[draft.category].slot === "bottom" ||
+              CATEGORIES[draft.category].slot === "dress") && (
               <Toggle
                 label="pyöräily"
                 on={draft.bikeable}
