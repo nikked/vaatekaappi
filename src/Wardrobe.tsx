@@ -4,6 +4,7 @@ import { deleteGarment, loadGarments, loadProfile, replaceGarments, saveGarment,
 import { GarmentForm, rgbCss, tintStyle } from "./GarmentForm";
 import { Icon } from "./Icon";
 import { completeGarment, draftFromPhoto, isUpToDate, type Draft } from "./photo";
+import { imageFiles } from "./image";
 import { useObjectUrl } from "./useObjectUrl";
 import { categoryGroup, categoryLeaf, type Garment, type StoredGarment } from "./garment";
 
@@ -127,21 +128,75 @@ export const Wardrobe = () => {
     })();
   }, []);
 
-  const addFiles = async (files: FileList | null) => {
-    if (!files) return;
+  // A photo that can't be read (typically HEIC outside Safari) doesn't stop the rest.
+  const addFiles = async (picked: readonly File[]) => {
+    const files = imageFiles(picked);
+    if (files.length === 0) return;
     const examples = garments.map((g) => ({ embedding: g.embedding, category: g.category }));
-    try {
-      for (const [i, file] of [...files].entries()) {
-        setBusy(`Tunnistetaan kuvaa ${i + 1} / ${files.length}…`);
+    const failed: string[] = [];
+    for (const [i, file] of files.entries()) {
+      setBusy(`Tunnistetaan kuvaa ${i + 1} / ${files.length}…`);
+      try {
         const draft = await draftFromPhoto(file, examples);
         setQueue((q) => [...q, draft]);
+      } catch {
+        failed.push(file.name);
       }
-    } catch (e) {
-      showError(e);
-    } finally {
-      setBusy(undefined);
+    }
+    setBusy(undefined);
+    if (failed.length > 0) {
+      setError(
+        `Näitä kuvia ei saatu käsiteltyä: ${failed.join(", ")}. Jos ne ovat HEIC-kuvia, tallenna ne ` +
+          "JPEG-muodossa (Kuvat-apissa Arkisto → Vie) tai käytä Safaria.",
+      );
     }
   };
+
+  // The whole screen accepts photos dragged from Finder or Photos.
+  const addFilesRef = useRef(addFiles);
+  addFilesRef.current = addFiles;
+  const [dragging, setDragging] = useState(false);
+  useEffect(() => {
+    let depth = 0;
+    const hasFiles = (e: DragEvent) => e.dataTransfer?.types.includes("Files") ?? false;
+    const onEnter = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      depth += 1;
+      setDragging(true);
+    };
+    const onLeave = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) setDragging(false);
+    };
+    // Without preventDefault the browser opens the dropped file instead.
+    const onOver = (e: DragEvent) => {
+      if (hasFiles(e)) e.preventDefault();
+    };
+    const onDrop = (e: DragEvent) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      setDragging(false);
+      void addFilesRef.current([...(e.dataTransfer?.files ?? [])]);
+    };
+    window.addEventListener("dragenter", onEnter);
+    window.addEventListener("dragleave", onLeave);
+    window.addEventListener("dragover", onOver);
+    window.addEventListener("drop", onDrop);
+    return () => {
+      window.removeEventListener("dragenter", onEnter);
+      window.removeEventListener("dragleave", onLeave);
+      window.removeEventListener("dragover", onOver);
+      window.removeEventListener("drop", onDrop);
+    };
+  }, []);
+  const dropOverlay = dragging && (
+    <div className="drop-overlay">
+      <Icon name="plus" />
+      Pudota kuvat tähän
+    </div>
+  );
 
   const save = async (garment: Garment) => {
     await saveGarment(garment);
@@ -170,6 +225,7 @@ export const Wardrobe = () => {
   if (reviewing && next) {
     return (
       <>
+        {dropOverlay}
         <div className="review-top">
           <button className="btn btn-ghost" onClick={() => setReviewing(false)}>
             <Icon name="back" />
@@ -204,6 +260,7 @@ export const Wardrobe = () => {
   if (editing) {
     return (
       <>
+        {dropOverlay}
         <div className="review-top">
           <button className="btn btn-ghost" onClick={() => setEditing(undefined)}>
             <Icon name="back" />
@@ -235,6 +292,7 @@ export const Wardrobe = () => {
 
   return (
     <>
+      {dropOverlay}
       <div className="screen-head">
         <div className="grow">
           <h1>Vaatekaappi</h1>
@@ -245,7 +303,7 @@ export const Wardrobe = () => {
         <label className="btn btn-primary" title="Lisää kuvia">
           <Icon name="plus" />
           <span className="add-label">Lisää kuvia</span>
-          <input type="file" accept="image/*" multiple hidden onChange={(e) => void addFiles(e.target.files)} />
+          <input type="file" accept="image/*" multiple hidden onChange={(e) => void addFiles([...(e.target.files ?? [])])} />
         </label>
         <details className="menu">
           <summary className="icon-btn" title="Lisää toimintoja">

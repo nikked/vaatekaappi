@@ -75,3 +75,10 @@ export const cropRgba = (rgba: Uint8ClampedArray | Uint8Array, width: number, b:
   }
   return out;
 };
+
+// Some browsers leave `type` empty for HEIC, so the extension is checked too.
+const IMAGE_EXTENSION = /\.(jpe?g|png|webp|heic|heif)$/i;
+
+/** The image files among dropped or picked files; folders and documents are skipped. */
+export const imageFiles = <F extends { name: string; type: string }>(files: readonly F[]): F[] =>
+  files.filter((f) => f.type.startsWith("image/") || IMAGE_EXTENSION.test(f.name));

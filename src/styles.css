@@ -1110,3 +1110,25 @@ kbd {
 .model-banner progress::-moz-progress-bar {
   background: var(--c-teal);
 }
+
+/* ---------- Drag and drop ---------- */
+.drop-overlay {
+  position: fixed;
+  inset: var(--s-4);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+  border: 3px dashed var(--c-terracotta);
+  border-radius: var(--r-lg);
+  background: color-mix(in oklab, var(--c-bg) 85%, transparent);
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  color: var(--c-terracotta);
+  pointer-events: none;
+}
+.drop-overlay svg {
+  width: 32px;
+  height: 32px;
+}

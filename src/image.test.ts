@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cropRgba, flattenOnWhite, opaqueBounds, withAlpha } from "./image";
+import { cropRgba, flattenOnWhite, imageFiles, opaqueBounds, withAlpha } from "./image";
 
 describe("flattenOnWhite", () => {
   it("keeps opaque pixels, whitens transparent ones and blends the rest", () => {
@@ -35,5 +35,17 @@ describe("cropRgba", () => {
     const cropped = cropRgba(image(["....", ".aa.", "..a."]), 4, { x: 1, y: 1, width: 2, height: 2 });
     // Red channel holds the source pixel index.
     expect([0, 4, 8, 12].map((i) => cropped[i])).toEqual([5, 6, 9, 10]);
+  });
+});
+
+describe("imageFiles", () => {
+  it("keeps images by type or extension and skips everything else", () => {
+    const files = [
+      { name: "IMG_1.jpg", type: "image/jpeg" },
+      { name: "IMG_2.HEIC", type: "" },
+      { name: "notes.pdf", type: "application/pdf" },
+      { name: "Kuvat", type: "" },
+    ];
+    expect(imageFiles(files).map((f) => f.name)).toEqual(["IMG_1.jpg", "IMG_2.HEIC"]);
   });
 });
