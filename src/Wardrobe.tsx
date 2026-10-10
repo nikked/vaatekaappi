@@ -1,27 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { exportWardrobe, importWardrobe } from "./backup";
-import { extractColors } from "./color";
 import { deleteGarment, loadGarments, replaceGarments, saveGarment } from "./db";
 import { GarmentForm } from "./GarmentForm";
-import { loadPixels } from "./image";
+import { downscale } from "./image";
+import { completeGarment, draftFromPhoto, type Draft } from "./photo";
 import { useObjectUrl } from "./useObjectUrl";
-import { DEFAULT_CATEGORY, type Garment } from "./garment";
-
-const draftFromFile = async (file: File): Promise<Garment> => {
-  const { colors } = extractColors(await loadPixels(file), 2);
-  return {
-    id: crypto.randomUUID(),
-    name: "",
-    description: "",
-    image: file,
-    category: DEFAULT_CATEGORY,
-    colors,
-    pattern: "solid",
-    occasions: [],
-    bikeable: false,
-    favourite: false,
-  };
-};
+import type { Garment, MaybeProcessedGarment } from "./garment";
 
 const download = (filename: string, content: string) => {
   const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
@@ -34,42 +18,89 @@ const download = (filename: string, content: string) => {
 
 const Thumbnail = ({ garment, onClick }: { garment: Garment; onClick: () => void }) => (
   <button className="thumb" onClick={onClick}>
-    <img src={useObjectUrl(garment.image)} alt={garment.name} />
+    <img src={useObjectUrl(garment.cutout)} alt={garment.name} />
     <span>{garment.name}</span>
   </button>
 );
 
+// One at a time: the models share one GPU/CPU, so parallel runs aren't faster.
+const completeAll = async (
+  garments: readonly MaybeProcessedGarment[],
+  onProgress: (done: number) => void,
+): Promise<Garment[]> => {
+  const completed: Garment[] = [];
+  for (const g of garments) {
+    completed.push(await completeGarment(g));
+    onProgress(completed.length);
+  }
+  return completed;
+};
+
 export const Wardrobe = () => {
   const [garments, setGarments] = useState<Garment[]>([]);
-  const [queue, setQueue] = useState<Garment[]>([]);
+  const [queue, setQueue] = useState<Draft[]>([]);
   const [editing, setEditing] = useState<Garment>();
+  const [busy, setBusy] = useState<string>();
   const [error, setError] = useState<string>();
+  const loadStarted = useRef(false);
 
-  const reload = async () => setGarments(await loadGarments());
+  const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
+
+  const process = async (stored: readonly MaybeProcessedGarment[]): Promise<Garment[]> => {
+    const missing = stored.filter((g) => !g.cutout || !g.embedding).length;
+    if (missing === 0) return completeAll(stored, () => {});
+    setBusy(`Käsitellään vaatteita 0 / ${missing}…`);
+    const done = await completeAll(stored, (n) => setBusy(`Käsitellään vaatteita ${n} / ${stored.length}…`));
+    setBusy(undefined);
+    return done;
+  };
 
   useEffect(() => {
-    void reload();
+    if (loadStarted.current) return;
+    loadStarted.current = true;
+    void (async () => {
+      try {
+        const stored = await loadGarments();
+        const complete = await process(stored);
+        if (stored.some((g) => !g.cutout || !g.embedding)) await replaceGarments(complete);
+        setGarments(complete);
+      } catch (e) {
+        showError(e);
+      }
+    })();
   }, []);
 
   const addFiles = async (files: FileList | null) => {
     if (!files) return;
-    const drafts = await Promise.all([...files].map(draftFromFile));
-    setQueue((q) => [...q, ...drafts]);
+    const examples = garments.map((g) => ({ embedding: g.embedding, category: g.category }));
+    try {
+      for (const [i, file] of [...files].entries()) {
+        setBusy(`Tunnistetaan kuvaa ${i + 1} / ${files.length}…`);
+        const draft = await draftFromPhoto(await downscale(file), examples);
+        setQueue((q) => [...q, draft]);
+      }
+    } catch (e) {
+      showError(e);
+    } finally {
+      setBusy(undefined);
+    }
   };
 
   const save = async (garment: Garment) => {
     await saveGarment(garment);
-    await reload();
+    setGarments((gs) => [...gs.filter((g) => g.id !== garment.id), garment]);
   };
 
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      await replaceGarments(await importWardrobe(await file.text()));
+      const complete = await process(await importWardrobe(await file.text()));
+      await replaceGarments(complete);
+      setGarments(complete);
       setError(undefined);
-      await reload();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setBusy(undefined);
+      showError(e);
     }
   };
 
@@ -104,13 +135,15 @@ export const Wardrobe = () => {
           />
         </label>
         {queue.length > 0 && <span>{queue.length} tarkistettavana</span>}
+        {busy && <span className="busy">{busy}</span>}
       </div>
       {error && <p className="error">{error}</p>}
 
       {next ? (
         <GarmentForm
-          key={next.id}
-          garment={next}
+          key={next.garment.id}
+          garment={next.garment}
+          suggestedCategories={next.suggestedCategories}
           submitLabel="Tallenna & seuraava"
           onSubmit={async (g) => {
             await save(g);
@@ -130,8 +163,8 @@ export const Wardrobe = () => {
           onCancel={() => setEditing(undefined)}
           onDelete={async () => {
             await deleteGarment(editing.id);
+            setGarments((gs) => gs.filter((g) => g.id !== editing.id));
             setEditing(undefined);
-            await reload();
           }}
         />
       ) : null}

@@ -1,35 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
+  cutoutColors,
   deltaE,
   dominantColors,
-  estimateBackground,
-  extractColors,
   hexToRgb,
+  mergeSimilar,
+  opaquePixels,
   rgbToHex,
   rgbToLab,
   type Pixels,
 } from "./color";
 import type { Rgb } from "./garment";
 
-// Background-colored image with a centered rectangle of `fill`.
-const image = (
-  width: number,
-  height: number,
-  background: Rgb,
-  fill: (x: number, y: number) => Rgb | null,
-): Pixels => {
-  const data = new Uint8ClampedArray(width * height * 4);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const [r, g, b] = fill(x, y) ?? background;
-      data.set([r, g, b, 255], (y * width + x) * 4);
+// Transparent image with an opaque garment drawn by `fill`.
+const cutout = (size: number, fill: (x: number, y: number) => [number, number, number, number] | null): Pixels => {
+  const data = new Uint8ClampedArray(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      data.set(fill(x, y) ?? [0, 0, 0, 0], (y * size + x) * 4);
     }
   }
-  return { data, width, height };
+  return { data, width: size, height: size };
 };
-
-const inside = (x: number, y: number, size: number, margin: number) =>
-  x >= margin && x < size - margin && y >= margin && y < size - margin;
 
 describe("rgbToLab", () => {
   it("maps white and black to L 100 and 0", () => {
@@ -52,10 +44,10 @@ describe("deltaE", () => {
   });
 });
 
-describe("estimateBackground", () => {
-  it("ignores a garment touching one edge", () => {
-    const pixels = image(10, 10, [240, 240, 240], (x) => (x < 3 ? [20, 20, 120] : null));
-    expect(estimateBackground(pixels)).toEqual([240, 240, 240]);
+describe("opaquePixels", () => {
+  it("keeps opaque pixels and drops transparent and half-transparent edge pixels", () => {
+    const pixels = cutout(3, (x) => (x === 0 ? [10, 20, 30, 255] : x === 1 ? [200, 200, 200, 120] : null));
+    expect(opaquePixels(pixels)).toEqual(Array<Rgb>(3).fill([10, 20, 30]));
   });
 });
 
@@ -78,34 +70,31 @@ describe("dominantColors", () => {
   });
 });
 
-describe("extractColors", () => {
-  it("finds the garment colors and ignores the background", () => {
-    const size = 40;
-    const pixels = image(size, size, [245, 245, 245], (x, y) =>
-      inside(x, y, size, 5) ? (x < 20 ? [150, 75, 30] : [40, 60, 30]) : null,
-    );
-    const { colors, uncertain } = extractColors(pixels, 2);
-    expect(uncertain).toBe(false);
-    expect(colors).toHaveLength(2);
-    expect(colors).toContainEqual([150, 75, 30]);
-    expect(colors).toContainEqual([40, 60, 30]);
+describe("mergeSimilar", () => {
+  it("merges shades of one color into the first (largest) one", () => {
+    const light: Rgb = [120, 63, 105];
+    const shadow: Rgb = [86, 36, 74];
+    expect(mergeSimilar([light, shadow], 18)).toEqual([light]);
   });
 
-  it("ignores the thin blended edge that downscaling leaves around a garment", () => {
-    const size = 100;
-    const pixels = image(size, size, [245, 245, 245], (x, y) => {
-      if (!inside(x, y, size, 10)) return null;
-      return inside(x, y, size, 11) ? [150, 75, 30] : [200, 160, 138];
-    });
-    expect(extractColors(pixels).colors).toEqual([[150, 75, 30]]);
+  it("keeps clearly different colors", () => {
+    expect(mergeSimilar([[255, 153, 0], [8, 145, 145]], 18)).toEqual([[255, 153, 0], [8, 145, 145]]);
+  });
+});
+
+describe("cutoutColors", () => {
+  it("suggests one color for a solid garment lit unevenly", () => {
+    const pixels = cutout(20, (x, y) => (y < 10 ? [120, 63, 105, 255] : x < 15 ? [104, 50, 90, 255] : null));
+    expect(cutoutColors(pixels)).toHaveLength(1);
   });
 
-  it("flags a garment that matches the background as uncertain", () => {
-    const size = 20;
-    const pixels = image(size, size, [245, 245, 245], (x, y) =>
-      inside(x, y, size, 3) ? [243, 244, 245] : null,
-    );
-    expect(extractColors(pixels)).toEqual({ colors: [], uncertain: true });
+  it("suggests both colors of a two-colored garment, largest first", () => {
+    const pixels = cutout(20, (_, y) => (y < 13 ? [150, 75, 30, 255] : [40, 60, 30, 255]));
+    expect(cutoutColors(pixels)).toEqual([[150, 75, 30], [40, 60, 30]]);
+  });
+
+  it("suggests nothing for an empty cut-out", () => {
+    expect(cutoutColors(cutout(5, () => null))).toEqual([]);
   });
 });
 

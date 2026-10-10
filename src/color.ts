@@ -29,41 +29,13 @@ export type Pixels = {
   height: number;
 };
 
-const pixelAt = ({ data, width }: Pixels, x: number, y: number): Rgb => {
-  const i = (y * width + x) * 4;
-  return [data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0];
-};
+// Cut-outs fade out at the edges; half-transparent pixels are blends with nothing.
+const MIN_ALPHA = 200;
 
-const median = (values: number[]): number => {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)] ?? 0;
-};
-
-// Median of the border, so a garment touching the edge doesn't skew it.
-export const estimateBackground = (pixels: Pixels): Rgb => {
-  const { width, height } = pixels;
-  const border: Rgb[] = [];
-  for (let x = 0; x < width; x++) {
-    border.push(pixelAt(pixels, x, 0), pixelAt(pixels, x, height - 1));
-  }
-  for (let y = 1; y < height - 1; y++) {
-    border.push(pixelAt(pixels, 0, y), pixelAt(pixels, width - 1, y));
-  }
-  return [
-    median(border.map((p) => p[0])),
-    median(border.map((p) => p[1])),
-    median(border.map((p) => p[2])),
-  ];
-};
-
-export const foreground = (pixels: Pixels, background: Rgb, threshold: number): Rgb[] => {
-  const bg = rgbToLab(background);
+export const opaquePixels = ({ data }: Pixels): Rgb[] => {
   const result: Rgb[] = [];
-  for (let y = 0; y < pixels.height; y++) {
-    for (let x = 0; x < pixels.width; x++) {
-      const p = pixelAt(pixels, x, y);
-      if (deltaE(rgbToLab(p), bg) > threshold) result.push(p);
-    }
+  for (let i = 0; i + 3 < data.length; i += 4) {
+    if ((data[i + 3] ?? 0) >= MIN_ALPHA) result.push([data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]);
   }
   return result;
 };
@@ -132,14 +104,20 @@ export const dominantColors = (
     .map(mean);
 };
 
-const BACKGROUND_THRESHOLD = 12;
-const MIN_FOREGROUND_SHARE = 0.02;
+// Light and shadow on the same fabric come out as separate clusters; closer
+// than this they are suggested as one color.
+const SAME_COLOR_DELTA_E = 18;
 
-export const extractColors = (pixels: Pixels, k = 3): { colors: Rgb[]; uncertain: boolean } => {
-  const fg = foreground(pixels, estimateBackground(pixels), BACKGROUND_THRESHOLD);
-  const uncertain = fg.length < pixels.width * pixels.height * MIN_FOREGROUND_SHARE;
-  return { colors: uncertain ? [] : dominantColors(fg, k), uncertain };
-};
+// Keeps the first (largest) of any colors closer than `maxDeltaE` to each other.
+export const mergeSimilar = (colors: readonly Rgb[], maxDeltaE: number): Rgb[] =>
+  colors.reduce<Rgb[]>(
+    (kept, c) =>
+      kept.some((k) => deltaE(rgbToLab(k), rgbToLab(c)) < maxDeltaE) ? kept : [...kept, c],
+    [],
+  );
+
+export const cutoutColors = (pixels: Pixels, max = 2): Rgb[] =>
+  mergeSimilar(dominantColors(opaquePixels(pixels), 3), SAME_COLOR_DELTA_E).slice(0, max);
 
 export const rgbToHex = (rgb: Rgb): string =>
   `#${rgb.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
