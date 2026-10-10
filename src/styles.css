@@ -1003,6 +1003,9 @@ kbd {
     align-items: stretch;
     gap: var(--s-2);
   }
+  .garment-picker {
+    width: 100%;
+  }
   .segmented button {
     flex: 1;
     justify-content: center;
@@ -1140,4 +1143,10 @@ kbd {
   width: 18px;
   height: 18px;
   accent-color: var(--c-terracotta);
+}
+.garment-picker {
+  width: auto;
+  min-width: 200px;
+  padding: 7px var(--s-4);
+  border-radius: var(--r-pill);
 }

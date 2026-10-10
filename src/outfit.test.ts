@@ -396,6 +396,20 @@ describe("rankOutfits", () => {
     expect(bottoms("any").sort()).toEqual(["bike-skirt", "long-skirt"]);
   });
 
+  it("can be limited to outfits with one chosen garment", () => {
+    const wardrobe = [
+      garment("top", TEE),
+      garment("skirt", SKIRT),
+      garment("trousers", TROUSERS),
+    ];
+    const withSkirt = rankOutfits(
+      wardrobe,
+      { ...everyday, garmentId: "skirt" },
+      WARM_AUTUMN,
+    );
+    expect(withSkirt.map((o) => o.garmentIds)).toEqual([["top", "skirt"]]);
+  });
+
   it("returns nothing for an empty wardrobe", () => {
     expect(rankOutfits([], everyday, WARM_AUTUMN)).toEqual([]);
   });

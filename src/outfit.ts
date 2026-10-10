@@ -23,6 +23,8 @@ export type Cycling = "any" | "bikeable" | "unbikeable";
 export type OutfitFilter = {
   occasion: Occasion;
   cycling: Cycling;
+  // Only outfits built around this garment, e.g. "what goes with my new skirt?".
+  garmentId?: string;
 };
 
 type Lch = readonly [number, number, number];
@@ -168,6 +170,10 @@ export const rankOutfits = (
   generateOutfits(garments.filter((g) => fitsFilter(g, filter)))
     .filter(hasAtMostOnePattern)
     .filter((outfit) => fitsCycling(outfit, filter.cycling))
+    .filter(
+      (outfit) =>
+        !filter.garmentId || outfit.some((g) => g.id === filter.garmentId),
+    )
     .map((outfit) => ({
       garmentIds: outfit.map((g) => g.id),
       score: scoreOutfit(outfit, palette),

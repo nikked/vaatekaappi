@@ -1,7 +1,12 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { loadGarments, loadProfile } from "./db";
 import { rgbCss } from "./GarmentForm";
-import type { Garment, Occasion, Slot } from "./garment";
+import {
+  categoryGroup,
+  type Garment,
+  type Occasion,
+  type Slot,
+} from "./garment";
 import { Icon } from "./Icon";
 import {
   type Cycling,
@@ -137,6 +142,18 @@ const SwapFields = ({
   </div>
 );
 
+// Only garments that can be part of an outfit, grouped like the wardrobe filters.
+const groupedForPicker = (
+  garments: readonly Garment[],
+): [string, Garment[]][] => {
+  const groups = new Map<string, Garment[]>();
+  for (const g of garments.filter((g) => slotOf(g) !== null)) {
+    const group = categoryGroup(g.category);
+    groups.set(group, [...(groups.get(group) ?? []), g]);
+  }
+  return [...groups];
+};
+
 type Editing = { key: string; outfit: Garment[] };
 
 export const Outfits = () => {
@@ -195,6 +212,25 @@ export const Outfits = () => {
       </div>
 
       <div className="pickers">
+        <div className="picker">
+          <span className="picker-label">Vaate</span>
+          <select
+            className="select-input garment-picker"
+            value={filter.garmentId ?? ""}
+            onChange={(e) => update({ garmentId: e.target.value || undefined })}
+          >
+            <option value="">Kaikki vaatteet</option>
+            {groupedForPicker(garments).map(([group, items]) => (
+              <optgroup key={group} label={group}>
+                {items.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name || "Nimetön"}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
         <div className="picker">
           <span className="picker-label">Tilanne</span>
           <div className="segmented">
