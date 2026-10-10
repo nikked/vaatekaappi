@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { exportWardrobe, importWardrobe } from "./backup";
+import { exportBackup, importBackup } from "./backup";
 import { deleteGarment, loadGarments, loadProfile, replaceGarments, saveGarment, saveProfile } from "./db";
 import { GarmentForm, rgbCss, tintStyle } from "./GarmentForm";
 import { Icon } from "./Icon";
@@ -7,8 +7,8 @@ import { completeGarment, draftFromPhoto, isUpToDate, type Draft } from "./photo
 import { useObjectUrl } from "./useObjectUrl";
 import { categoryGroup, categoryLeaf, type Garment, type StoredGarment } from "./garment";
 
-const download = (filename: string, content: string) => {
-  const url = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+const download = (filename: string, content: Blob) => {
+  const url = URL.createObjectURL(content);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
@@ -153,7 +153,7 @@ export const Wardrobe = () => {
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const backup = await importWardrobe(await file.text());
+      const backup = await importBackup(new Uint8Array(await file.arrayBuffer()));
       // Stored before any processing, so the imported input is safe even if models fail.
       await replaceGarments(backup.garments);
       if (backup.profile) await saveProfile(backup.profile);
@@ -256,12 +256,15 @@ export const Wardrobe = () => {
               disabled={garments.length === 0}
               onClick={async (e) => {
                 closeMenu(e.currentTarget);
-                download("vaatekaappi.json", await exportWardrobe(garments, await loadProfile()));
+                // From the database, not the screen: includes garments still waiting for a cut-out.
+                const zip = await exportBackup((await loadGarments()).garments, await loadProfile());
+                const date = new Date().toISOString().slice(0, 10);
+                download(`kaappi-varmuuskopio-${date}.zip`, new Blob([new Uint8Array(zip)], { type: "application/zip" }));
               }}
             >
               <Icon name="down" />
               <span>
-                Vie varmuuskopio<small>Vaatteet ja värisi yhteen tiedostoon</small>
+                Vie varmuuskopio<small>Kuvat, vaatteiden tiedot ja värisi zip-tiedostoon</small>
               </span>
             </button>
             <label>
@@ -271,7 +274,7 @@ export const Wardrobe = () => {
               </span>
               <input
                 type="file"
-                accept="application/json"
+                accept=".zip,.json,application/zip,application/json"
                 hidden
                 onChange={(e) => {
                   closeMenu(e.currentTarget);
