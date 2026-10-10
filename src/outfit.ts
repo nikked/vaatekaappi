@@ -5,7 +5,6 @@ import {
   type Occasion,
   type Rgb,
   type Slot,
-  type Warmth,
 } from "./garment";
 
 type OutfitTemplate = {
@@ -20,7 +19,6 @@ export type Outfit = {
 
 export type OutfitFilter = {
   occasion: Occasion;
-  weather: Warmth;
   cycling: boolean;
 };
 
@@ -67,14 +65,11 @@ export const generateOutfits = (garments: readonly Garment[]): Garment[][] =>
     return cartesian(choices).map((combo) => combo.filter((g) => g !== null));
   });
 
-// A garment's warmth matching the weather is the wrong match: a warm knit on a
-// warm day, or an airy garment on a cool day. Untagged garments fit any weather.
 export const fitsFilter = (
   garment: Garment,
-  { occasion, weather, cycling }: OutfitFilter,
+  { occasion, cycling }: OutfitFilter,
 ): boolean =>
   garment.occasions.includes(occasion) &&
-  garment.warmth !== weather &&
   (!cycling || slotOf(garment) !== "bottom" || garment.bikeable);
 
 export const hasAtMostOnePattern = (outfit: readonly Garment[]): boolean =>

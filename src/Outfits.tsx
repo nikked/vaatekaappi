@@ -1,8 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { loadGarments, loadProfile } from "./db";
 import { rgbCss } from "./GarmentForm";
-import type { Garment, Occasion, Slot, Warmth } from "./garment";
-import { Icon, type IconName } from "./Icon";
+import type { Garment, Occasion, Slot } from "./garment";
+import { Icon } from "./Icon";
 import {
   fitsFilter,
   type OutfitFilter,
@@ -20,10 +20,6 @@ import { useObjectUrl } from "./useObjectUrl";
 const OCCASIONS: readonly [Occasion, string][] = [
   ["everyday", "Arki"],
   ["party", "Juhla"],
-];
-const WEATHERS: readonly [Warmth, string, IconName][] = [
-  ["warm", "Lämmin", "sun"],
-  ["cool", "Viileä", "leaf"],
 ];
 const SLOT_ORDER: readonly Slot[] = ["outer", "top", "dress", "bottom"];
 const SLOT_LABELS: Record<Slot, string> = {
@@ -141,7 +137,6 @@ export const Outfits = () => {
   const [garments, setGarments] = useState<Garment[]>([]);
   const [filter, setFilter] = useState<OutfitFilter>({
     occasion: "everyday",
-    weather: "cool",
     cycling: false,
   });
   const [editing, setEditing] = useState<Editing>();
@@ -183,6 +178,13 @@ export const Outfits = () => {
             Asut värityyppisi ({SEASON_LABELS[profile.season].toLowerCase()})
             mukaan, parhaat ensin.
           </p>
+          {ranked.length > 0 && (
+            <p className="outfit-count">
+              {ranked.length > MAX_SHOWN
+                ? `${ranked.length} asua, näytetään ${MAX_SHOWN} parasta`
+                : `${ranked.length} ${ranked.length === 1 ? "asu" : "asua"}`}
+            </p>
+          )}
         </div>
       </div>
 
@@ -197,22 +199,6 @@ export const Outfits = () => {
                 aria-pressed={filter.occasion === value}
                 onClick={() => update({ occasion: value })}
               >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="picker">
-          <span className="picker-label">Sää</span>
-          <div className="segmented">
-            {WEATHERS.map(([value, label, icon]) => (
-              <button
-                type="button"
-                key={value}
-                aria-pressed={filter.weather === value}
-                onClick={() => update({ weather: value })}
-              >
-                <Icon name={icon} />
                 {label}
               </button>
             ))}

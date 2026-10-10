@@ -89,7 +89,7 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 - Export / import JSON.
 
 ### Asut
-- Occasion (Arki / Juhla), weather (Lämmin / Viileä) and Pyöräily pickers →
+- Occasion (Arki / Juhla) and Pyöräily pickers, with the number of outfits →
   ranked list of generated outfits. Each card shows 5 score dots; the best one
   gets a "Sopii sinulle" badge. No explanation text.
 - Pick an outfit, or swap single garments → dress me: collage of garment images
@@ -139,10 +139,9 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 ### 2. Outfits (done)
 All pure functions over `Garment[]`:
 - **Generate:** fill template slots from the wardrobe.
-- **Filter:** every garment has the chosen occasion; cold weather excludes
-  `cool` garments, warm weather excludes `warm` ones, untagged fit both;
-  Pyöräily requires a bikeable bottom (or no bottom); at most one patterned
-  item.
+- **Filter:** every garment has the chosen occasion; Pyöräily requires a
+  bikeable bottom (or no bottom); at most one patterned item. Warmth is
+  stored but not used for filtering.
 - **Score:**
   - Palette fit: distance of the worst-fitting garment's dominant color to the
     nearest palette color (a mean would reward adding any on-palette layer).

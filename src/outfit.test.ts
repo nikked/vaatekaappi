@@ -69,11 +69,7 @@ const garment = (
 const ids = (outfits: readonly (readonly Garment[])[]): string[][] =>
   outfits.map((o) => o.map((g) => g.id).sort());
 
-const everydayCool: OutfitFilter = {
-  occasion: "everyday",
-  weather: "cool",
-  cycling: false,
-};
+const everyday: OutfitFilter = { occasion: "everyday", cycling: false };
 
 describe("generateOutfits", () => {
   it("fills top + bottom, with and without each outer", () => {
@@ -139,36 +135,16 @@ describe("fitsFilter", () => {
     expect(
       fitsFilter(
         garment("a", TEE, GREY, { occasions: ["everyday", "party"] }),
-        everydayCool,
+        everyday,
       ),
     ).toBe(true);
     expect(
-      fitsFilter(
-        garment("a", TEE, GREY, { occasions: ["party"] }),
-        everydayCool,
-      ),
+      fitsFilter(garment("a", TEE, GREY, { occasions: ["party"] }), everyday),
     ).toBe(false);
   });
 
-  it("drops airy garments on cool days and warm garments on warm days", () => {
-    const airy = garment("a", TROUSERS, GREY, { warmth: "cool" });
-    const knit = garment("k", KNIT, GREY, { warmth: "warm" });
-    const warmDay: OutfitFilter = { ...everydayCool, weather: "warm" };
-    expect(fitsFilter(airy, everydayCool)).toBe(false);
-    expect(fitsFilter(knit, everydayCool)).toBe(true);
-    expect(fitsFilter(airy, warmDay)).toBe(true);
-    expect(fitsFilter(knit, warmDay)).toBe(false);
-  });
-
-  it("lets garments without warmth fit any weather", () => {
-    expect(fitsFilter(garment("a", TEE), everydayCool)).toBe(true);
-    expect(
-      fitsFilter(garment("a", TEE), { ...everydayCool, weather: "warm" }),
-    ).toBe(true);
-  });
-
   it("requires bikeable bottoms when cycling, and only bottoms", () => {
-    const cycling: OutfitFilter = { ...everydayCool, cycling: true };
+    const cycling: OutfitFilter = { ...everyday, cycling: true };
     expect(
       fitsFilter(garment("s", SKIRT, GREY, { bikeable: true }), cycling),
     ).toBe(true);
@@ -343,7 +319,7 @@ describe("rankOutfits", () => {
       garment("green-top", TEE, GREEN),
       garment("orange-skirt", SKIRT, ORANGE),
     ];
-    const ranked = rankOutfits(wardrobe, everydayCool, WARM_AUTUMN);
+    const ranked = rankOutfits(wardrobe, everyday, WARM_AUTUMN);
     expect(ranked.map((o) => o.garmentIds)).toEqual([
       ["rust-top", "orange-skirt"],
       ["green-top", "orange-skirt"],
@@ -360,7 +336,7 @@ describe("rankOutfits", () => {
       garment("black-trousers", TROUSERS, BLACK),
       garment("rust-coat", COAT, RUST),
     ];
-    const [first, second] = rankOutfits(wardrobe, everydayCool, WARM_AUTUMN);
+    const [first, second] = rankOutfits(wardrobe, everyday, WARM_AUTUMN);
     expect(first?.score).toBeCloseTo(second?.score ?? Number.NaN, 1);
   });
 
@@ -368,11 +344,10 @@ describe("rankOutfits", () => {
     const wardrobe = [
       garment("top", TEE),
       garment("party-top", TEE, GREY, { occasions: ["party"] }),
-      garment("airy-top", TEE, GREY, { warmth: "cool" }),
       garment("bottom", TROUSERS),
     ];
     expect(
-      rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds),
+      rankOutfits(wardrobe, everyday, WARM_AUTUMN).map((o) => o.garmentIds),
     ).toEqual([["top", "bottom"]]);
   });
 
@@ -383,7 +358,7 @@ describe("rankOutfits", () => {
       garment("plain-skirt", SKIRT),
     ];
     expect(
-      rankOutfits(wardrobe, everydayCool, WARM_AUTUMN).map((o) => o.garmentIds),
+      rankOutfits(wardrobe, everyday, WARM_AUTUMN).map((o) => o.garmentIds),
     ).toEqual([["patterned-top", "plain-skirt"]]);
   });
 
@@ -394,13 +369,13 @@ describe("rankOutfits", () => {
       garment("b", TROUSERS, BLACK),
     ];
     const first = (palette: readonly Rgb[]) =>
-      rankOutfits(wardrobe, everydayCool, palette)[0]?.garmentIds[0];
+      rankOutfits(wardrobe, everyday, palette)[0]?.garmentIds[0];
     expect(first(WARM_AUTUMN)).toBe("rust-top");
     expect(first([COBALT, BLACK])).toBe("cobalt-top");
   });
 
   it("returns nothing for an empty wardrobe", () => {
-    expect(rankOutfits([], everydayCool, WARM_AUTUMN)).toEqual([]);
+    expect(rankOutfits([], everyday, WARM_AUTUMN)).toEqual([]);
   });
 });
 
