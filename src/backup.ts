@@ -2,6 +2,7 @@ import {
   OCCASIONS,
   PATTERNS,
   WARMTHS,
+  currentCategory,
   isCategory,
   isOneOf,
   type Garment,
@@ -76,9 +77,10 @@ export const importWardrobe = async (json: string): Promise<MaybeProcessedGarmen
   if (!isRecord(parsed) || parsed.version !== 1 || !Array.isArray(parsed.garments)) {
     throw new Error("Not a wardrobe export file");
   }
-  const invalid = parsed.garments.findIndex((g) => !isExportedGarment(g));
+  const migrated = parsed.garments.map((g) => (isRecord(g) ? { ...g, category: currentCategory(g.category) } : g));
+  const invalid = migrated.findIndex((g) => !isExportedGarment(g));
   if (invalid !== -1) throw new Error(`Invalid garment at index ${invalid}`);
-  const garments: ExportedGarment[] = parsed.garments.filter(isExportedGarment);
+  const garments: ExportedGarment[] = migrated.filter(isExportedGarment);
   return Promise.all(
     garments.map(async ({ cutout, ...g }) => ({
       ...g,

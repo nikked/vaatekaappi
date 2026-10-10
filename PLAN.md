@@ -68,16 +68,17 @@ type Outfit = {
 
 Color tags (#musta, #vihreä, …) are dropped; hex colors cover them.
 
-Category tree (from `vaatteet.json`, plus `Takit > Sisätakit`):
+Category tree (from `vaatteet.json`, plus a Päällysosat group for garments
+never worn without a top):
 
 | Category                                         | Slot   |
 | ------------------------------------------------ | ------ |
-| Yläosa > Pitkähihaiset > Kauluspaidat / Neulepaidat / Neuletakit | top |
-| Yläosa > Pitkähihaiset > Bleiserit               | outer  |
+| Yläosa > Pitkähihaiset > Kauluspaidat / Neulepaidat | top |
 | Yläosa > Lyhythihaiset > Kauluspaidat / T-paidat | top    |
 | Alaosa > Housut / Hameet (Pitkät, Lyhyet) / Shortsit | bottom |
 | Mekot                                            | dress  |
-| Takit, Takit > Sisätakit                          | outer  |
+| Päällysosat > Sisätakit / Bleiserit / Neuletakit | outer  |
+| Takit (outdoor coats)                            | outer  |
 | Sukat, Kengät (…), Päähineet (…), Korut, Asusteet, Alusvaatteet | none yet |
 
 Categories without a slot are stored but not used in outfits until they are
@@ -111,7 +112,7 @@ Templates: `top + bottom (+ outer)`, `dress (+ outer)`.
 - App shell with two screens, IndexedDB storage, JSON export/import.
 - Convert `vaatteet.json` by hand to `examples.json` with fixes: the skirt's ID
   is 4364 (photo `IMG_4364`), description "Kiva hame arkeen ja juhlaan";
-  normalize category paths; denim shirt and blazer move to Takit > Sisätakit;
+  normalize category paths; denim shirt and blazer move to Takit > Sisätakit (now Päällysosat > Sisätakit);
   `##cc99ff` → `#cc99ff`; skirt gets two colors.
 - Convert the 7 HEIC photos once to JPEG with macOS `sips`.
 - Replace placeholder categories and fields in `garment.ts` with the model above.

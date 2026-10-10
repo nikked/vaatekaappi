@@ -51,6 +51,12 @@ describe("importWardrobe", () => {
     await expect(importWardrobe('{"hello": 1}')).rejects.toThrow("Not a wardrobe export file");
   });
 
+  it("moves garments exported under an old category path", async () => {
+    const json = await exportWardrobe([{ ...garment("a", [1]), category: "Päällysosat > Bleiserit" }]);
+    const [restored] = await importWardrobe(json.replace("Päällysosat > Bleiserit", "Yläosa > Pitkähihaiset > Bleiserit"));
+    expect(restored?.category).toBe("Päällysosat > Bleiserit");
+  });
+
   it("rejects a garment with an unknown category", async () => {
     const json = await exportWardrobe([garment("a", [1])]);
     await expect(importWardrobe(json.replace("Neulepaidat", "Avaruuspuvut"))).rejects.toThrow(
