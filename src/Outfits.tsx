@@ -21,6 +21,7 @@ import {
 } from "./outfit";
 import { DEFAULT_PROFILE, SEASON_LABELS } from "./palette";
 import { isUpToDate } from "./photo";
+import { HelpTip, Tip } from "./Tip";
 import { useObjectUrl } from "./useObjectUrl";
 
 const OCCASIONS: readonly [Occasion, string][] = [
@@ -32,6 +33,9 @@ const CYCLING: readonly [Cycling, string][] = [
   ["bikeable", "Pyöräilyyn"],
   ["unbikeable", "Ei pyöräilyyn"],
 ];
+const SCORE_HELP =
+  "Kuinka hyvin asun värit sopivat yhteen ja värityyppiisi. Pallot ovat suhteessa näkyviin asuihin: paras saa viisi.";
+
 const SLOT_ORDER: readonly Slot[] = ["outer", "top", "dress", "bottom"];
 const SLOT_LABELS: Record<Slot, string> = {
   outer: "Päällysosa tai takki",
@@ -76,15 +80,21 @@ const Collage = ({
 );
 
 const Score = ({ dots }: { dots: number }) => (
-  <span className="score" title={`${dots} / ${SCORE_DOTS}`}>
-    <span className="score-label">Sopivuus</span>
-    <span className="score-dots">
-      {Array.from({ length: SCORE_DOTS }, (_, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: a fixed row of five dots
-        <span key={i} className={i < dots ? "on" : undefined} />
-      ))}
+  <Tip text={SCORE_HELP} align="end">
+    <span
+      className="score"
+      role="img"
+      aria-label={`Sopivuus ${dots} / ${SCORE_DOTS}`}
+    >
+      <span className="score-label">Sopivuus</span>
+      <span className="score-dots">
+        {Array.from({ length: SCORE_DOTS }, (_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: a fixed row of five dots
+          <span key={i} className={i < dots ? "on" : undefined} />
+        ))}
+      </span>
     </span>
-  </span>
+  </Tip>
 );
 
 const Items = ({ outfit }: { outfit: readonly Garment[] }) => (
@@ -213,7 +223,10 @@ export const Outfits = () => {
 
       <div className="pickers">
         <div className="picker">
-          <span className="picker-label">Vaate</span>
+          <span className="picker-label">
+            Vaate
+            <HelpTip text="Valitse vaate, niin näet vain asut, joissa se on mukana." />
+          </span>
           <select
             className="select-input garment-picker"
             value={filter.garmentId ?? ""}
@@ -232,7 +245,10 @@ export const Outfits = () => {
           </select>
         </div>
         <div className="picker">
-          <span className="picker-label">Tilanne</span>
+          <span className="picker-label">
+            Tilanne
+            <HelpTip text="Näytetään asut, joiden kaikki vaatteet on merkitty arkeen tai juhlaan." />
+          </span>
           <div className="segmented">
             {OCCASIONS.map(([value, label]) => (
               <button
@@ -250,6 +266,7 @@ export const Outfits = () => {
           <span className="picker-label">
             <Icon name="bike" />
             Pyöräily
+            <HelpTip text="Pyöräilyyn: asut ilman alaosaa tai mekkoa, joka ei sovellu pyöräilyyn. Ei pyöräilyyn: vain asut, joissa sellainen on." />
           </span>
           <div className="segmented">
             {CYCLING.map(([value, label]) => (

@@ -1150,3 +1150,57 @@ kbd {
   padding: 7px var(--s-4);
   border-radius: var(--r-pill);
 }
+
+/* ---------- Help tips ---------- */
+.tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: help;
+}
+.tip:focus-visible {
+  outline: 2px solid var(--c-terracotta);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+.tip-text {
+  position: absolute;
+  bottom: calc(100% + var(--s-2));
+  z-index: 15;
+  width: max-content;
+  max-width: 260px;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--c-text);
+  color: var(--c-bg);
+  font: 400 var(--fs-sm) / 1.4 var(--font-body);
+  white-space: normal;
+  text-align: left;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.tip-start .tip-text {
+  left: 0;
+}
+.tip-end .tip-text {
+  right: 0;
+}
+.tip:hover .tip-text,
+.tip:focus-visible .tip-text {
+  opacity: 1;
+  visibility: visible;
+}
+.help-mark {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--c-sunk);
+  color: var(--c-text-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
